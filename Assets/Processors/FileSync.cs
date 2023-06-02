@@ -28,7 +28,10 @@ public class FileSync : Processor
     {
         Debug.Log("File changed: " + GetRelativePath(filePath));
         byte[] fileBytes = Convert.FromBase64String(fileContent);
-        File.WriteAllBytes(dataPath + filePath, fileBytes);
+        PerformSafeFileOperation(() => 
+        {
+            File.WriteAllBytes(dataPath + filePath, fileBytes);
+        });
     }
 
     protected override void OnMessageReceived(int index, string msg, string userID)
