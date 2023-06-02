@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
+      "projectUniqueName": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
       "projectName": "UnityTogetherServer",
-      "projectPath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
+      "projectPath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
       "packagesPath": "C:\\Users\\othel\\.nuget\\packages\\",
-      "outputPath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\",
+      "outputPath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

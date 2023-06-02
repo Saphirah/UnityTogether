@@ -8,12 +8,12 @@ public class CameraDrawer : Processor
     private Material material;
     private CameraTransformPackage cameraTransformPackage = new();
     
-    public CameraDrawer(Client com) : base(com)
+    public CameraDrawer(UnityTogetherClient com) : base(com)
     {
         mesh = Resources.Load<Mesh>("CameraMesh");
         material = Resources.Load<Material>("CameraMaterial");
         com.OnRender += Render;
-        com.OnUpdate += Update;
+        com.OnRender += Update;
     }
     
     private Dictionary<string, PositionRotation> clients = new();
@@ -31,12 +31,14 @@ public class CameraDrawer : Processor
     public void Update()
     {
         if (cameraTransformPackage.position == SceneView.lastActiveSceneView.camera.transform.position && cameraTransformPackage.rotation == SceneView.lastActiveSceneView.camera.transform.rotation) return;
+        Transform transform = SceneView.lastActiveSceneView.camera.transform;
         cameraTransformPackage = new CameraTransformPackage
         {
-            position = SceneView.lastActiveSceneView.camera.transform.position,
-            rotation = SceneView.lastActiveSceneView.camera.transform.rotation
+            position = transform.position,
+            rotation = transform.rotation
         };
         communication.SendPackage(cameraTransformPackage);
+        Debug.Log("Sent camera transform");
     }
     
     public void Render()

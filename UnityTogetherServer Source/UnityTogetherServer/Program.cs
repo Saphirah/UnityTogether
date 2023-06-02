@@ -1,7 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 public class Server
 {
@@ -10,24 +15,34 @@ public class Server
     private List<Task> listenTasks = new();
     private TcpClient currentClient;
     
+    public const string SEPARATOR = "\u001C\u001D\u001E\u001F";
+    
     private int packageIndex = 0;
+    
+    private string sessionName = null;
     
     public static void Main(string[] args)
     {
         Server server = new();
         
+        server.CreateSessionFile();
         if (args.Length > 0)
         {
             server.StartServer(args[0], Convert.ToInt32(args[1]));
             return;
         }
         server.StartServer("25.48.78.141", 8085);
-        return;
-        Console.WriteLine("Enter IP address: ");
-        string ip = Console.ReadLine() ?? string.Empty;
-        Console.WriteLine("Enter port: ");
-        int port = Convert.ToInt32(Console.ReadLine());
-        server.StartServer(ip, port);
+    }
+    
+    public void CreateSessionFile(string? name = null)
+    {
+        sessionName = name ?? DateTime.Now.ToString("yyyyMMddHHmmss");
+        string path = Path.Combine(Directory.GetCurrentDirectory(), "Sessions", sessionName);
+        Directory.CreateDirectory(path);
+        //Create File
+        string filePath = Path.Combine(path, "SessionData.txt");
+        File.Create(filePath);
+        Console.WriteLine("Session File created: " + filePath);
     }
     
     public void StartServer(string IP, int Port)
@@ -37,6 +52,7 @@ public class Server
         server = new TcpListener(IPAddress.Parse(IP), Port);
         server.Start();
         Console.WriteLine("Server has started.");
+        Console.WriteLine("Listening for connections...");
         
         packageIndex = 0;
         
@@ -55,11 +71,19 @@ public class Server
     {
         packageIndex++;
         List<TcpClient> brokenClients = new();
+
+        string packageContent = packageType + "#" + username + "#" + package + SEPARATOR;
+        
+        //Write Session to file
+        string path = Path.Combine(Directory.GetCurrentDirectory(), "Sessions", sessionName);
+        string filePath = Path.Combine(path, "SessionData.txt");
+        File.AppendAllText(filePath, packageContent);
+        
         foreach (TcpClient? client in clients)
         {
-            if (client == null || client is {Connected: false}) continue;
+            if (client is null or {Connected: false}) continue;
             Stream stream = client.GetStream();
-            List<byte> data = Encoding.ASCII.GetBytes(packageType + "#" + username + "#" + package + ";").ToList();
+            List<byte> data = Convert.FromBase64String(packageContent).ToList();
 
             try
             {
@@ -85,19 +109,20 @@ public class Server
     
     protected void ListenToClient(TcpClient? client)
     {
+        Console.WriteLine("Started listening to: " + client?.Client?.RemoteEndPoint);
         NetworkStream ns = client.GetStream();
         while (client is {Connected: true})
         {
             while (client is {Connected: true} && !ns.DataAvailable) { }
-
+            
             if (client is {Connected: false}) break;
 
             byte[] msgBuffer = new byte[50000];
             Task<int> readTask = ns.ReadAsync(msgBuffer, 0, msgBuffer.Length);
             msgBuffer = msgBuffer.Take(readTask.Result).ToArray();
-            string msg = Encoding.ASCII.GetString(msgBuffer);
+            string msg = Convert.ToBase64String(msgBuffer);
 
-            string[] messages = msg.Split(';');
+            string[] messages = msg.Split(SEPARATOR);
             foreach (string message in messages)
             {
                 if (message == "") continue;
@@ -109,5 +134,6 @@ public class Server
             }
             Console.WriteLine("Received package from " + client.Client.RemoteEndPoint + ": " + msg);
         }
+        Console.WriteLine("Client disconnected: " + client?.Client?.RemoteEndPoint);
     }
 }

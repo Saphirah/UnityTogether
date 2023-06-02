@@ -8,12 +8,27 @@ using UnityEngine;
 
 public class GameObjectSync : Processor
 {
-    private GameObject[] selectedGameObjects = new GameObject[0];
-    private List<Dictionary<KeyValuePair<Component, string>, object>> gameObjectProperties = new();
-
-    public GameObjectSync(Client com) : base(com)
+    public GameObjectSync(UnityTogetherClient com) : base(com)
     {
-        com.OnUpdate += Update;
+        Undo.postprocessModifications += OnPostprocessModifications;
+    }
+    
+    private UndoPropertyModification[] OnPostprocessModifications(UndoPropertyModification[] modifications)
+    {
+        Debug.Log(JsonSerialization.ToJson(modifications));
+        foreach (UndoPropertyModification modification in modifications)
+        {
+            if(modification.currentValue.target is Component component)
+                communication.SendPackage(new GameObjectSerializationPackage()
+                {
+                    ComponentName = component.GetType().Name,
+                    GameObjectHierarchy = GetPath(component.transform),
+                    Value = modification.currentValue.value,
+                    VariableName = modification.currentValue.propertyPath
+                });
+        }
+
+        return modifications;
     }
 
     protected override void OnMessageReceived(int index, string msg, string userID)
@@ -21,30 +36,26 @@ public class GameObjectSync : Processor
         switch (index)
         {
             case 1:
-                //Debug.Log(msg);
-                GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);
-                GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);
-                if (gameObject == null) return;
-                //Debug.Log("Gameobject found");
-                Component component = gameObject.GetComponents<Component>().ToList()
-                    .Find(c => c.GetType().Name == serializationPackage.ComponentName);
-                if (component == null) return;
-                //Debug.Log("Component found " + component.GetType().Name);
-                Type type = component.GetType();
-                SerializedObject serializedObject = new SerializedObject(component);
-                SerializedProperty iterator = serializedObject.GetIterator();
-                iterator.Next(true);
-                while (iterator.NextVisible(false))
+                UnityTogetherClient.Enqueue(() =>
                 {
-                    if (iterator.name == serializationPackage.VariableName)
+                    GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);
+                    GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);
+                    if (gameObject == null) return;
+                    Component component = gameObject.GetComponents<Component>().ToList()
+                        .Find(c => c.GetType().Name == serializationPackage.ComponentName);
+                    if (component == null) return;
+                    SerializedObject serializedObject = new SerializedObject(component);
+                    SerializedProperty iterator = serializedObject.GetIterator();
+                    iterator.Next(true);
+                    while (iterator.NextVisible(true))
                     {
-                        //Debug.Log("Property found " + iterator.name);
-                        //Debug.Log("Value " + serializationPackage.Value);
+                        string path = iterator.propertyPath;
+                        if (path != serializationPackage.VariableName) continue;
                         SetSerializedPropertyValue(iterator, serializationPackage.Value);
                         serializedObject.ApplyModifiedProperties();
                         break;
                     }
-                }
+                });
                 break;  
             case 2:
                 if(Communication.Instance.Username == userID) return;
@@ -62,70 +73,6 @@ public class GameObjectSync : Processor
                 GameObjectDestroyPackage destroyPackage = new GameObjectDestroyPackage(msg);
                 GameObject.DestroyImmediate(destroyPackage.GameObject);
                 break;
-        }
-    }
-
-    private void Update()
-    {
-        if (!Selection.gameObjects.Any()) return;
-        
-        //Reset Selection
-        if (!Selection.gameObjects.ToHashSet().SetEquals(selectedGameObjects))
-        {
-            selectedGameObjects = Selection.gameObjects;
-            gameObjectProperties.Clear();
-            for (int i = 0; i < selectedGameObjects.Length; i++)
-            {
-                Component[] components = selectedGameObjects[i].GetComponents<Component>();
-
-                gameObjectProperties.Add(new Dictionary<KeyValuePair<Component, string>, object>());
-
-                foreach (Component component in components)
-                {
-                    if (component == null) continue;
-                    SerializedObject serializedObject = new SerializedObject(component);
-                    SerializedProperty iterator = serializedObject.GetIterator();
-                    while (iterator.NextVisible(true))
-                    {
-                        object value = GetSerializedPropertyValue(iterator);
-                        if (value == null) continue;
-                        gameObjectProperties[i].TryAdd(new KeyValuePair<Component, string>(component, iterator.name),
-                            GetSerializedPropertyValue(iterator));
-                    }
-                }
-            }
-
-            //Debug.Log("New Selection");
-        }
-
-        for (var index = 0; index < selectedGameObjects.Length; index++)
-        {
-            //Sync Property change
-            Component[] components = selectedGameObjects[index].GetComponents<Component>();
-
-            foreach (Component component in components)
-            {
-                if (component == null) continue;
-                SerializedObject serializedObject = new SerializedObject(component);
-                SerializedProperty iterator = serializedObject.GetIterator();
-                iterator.NextVisible(true);
-                do
-                {
-                    object value = GetSerializedPropertyValue(iterator);
-                    var key = new KeyValuePair<Component, string>(component, iterator.name);
-                    if (value == null || !gameObjectProperties[index].ContainsKey(key) ||
-                        gameObjectProperties[index][key].ToString() == value.ToString()) continue;
-                    //Debug.Log("Updating Value of " + iterator.name + " to " + value + " was " + gameObjectProperties[index][new KeyValuePair<Component, string>(component, iterator.name)] + " on " + component.GetType().Name);
-                    communication.SendPackage(new GameObjectSerializationPackage()
-                    {
-                        ComponentName = component.GetType().Name,
-                        GameObjectHierarchy = GetPath(component.transform),
-                        Value = value.ToString(),
-                        VariableName = iterator.name
-                    });
-                    gameObjectProperties[index][new KeyValuePair<Component, string>(component, iterator.name)] = value;
-                } while (iterator.NextVisible(false));
-            }
         }
     }
 

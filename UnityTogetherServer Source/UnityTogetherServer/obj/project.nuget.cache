@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6GDgqDglxLBStX9uuWTgQIEG6rSzrfyyxzZV31PMee+j0q+fWKdXJST2F6LMU4Lbtr6YLGktSK2ORxpfWvVpUA==",
+  "dgSpecHash": "4a6ggbJ+DjOMps6HaTseEViMx5chA44aKTflogGVcqWe35e9FNuyMefdE05RX8kuU7EjZDQkC191LMkoEa2o6g==",
   "success": true,
-  "projectFilePath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
+  "projectFilePath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

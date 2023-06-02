@@ -213,7 +213,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 421366083}
   m_LocalRotation: {x: 0.46245, y: -0.21235, z: 0.85112, w: -0.12898}
-  m_LocalPosition: {x: -14.8, y: 29.3, z: 11.6}
+  m_LocalPosition: {x: 0.1, y: 72.7, z: -9.4}
   m_LocalScale: {x: 15.97, y: 6.03, z: 13.52}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -307,7 +307,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 14.76, y: 49, z: -25.55}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -407,7 +407,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1200371493}
-  - component: {fileID: 1200371491}
+  - component: {fileID: 1200371494}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -415,23 +415,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1200371491
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1200371490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1fe0fdfdb3b6d0549ab61ca925c49759, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  IP: 25.48.78.141
-  Port: 8085
-  ticksPerSecond: 1
-  Username: Enpharla
-  AutoConnect: 1
 --- !u!4 &1200371493
 Transform:
   m_ObjectHideFlags: 0
@@ -447,6 +430,19 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1200371494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1200371490}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6188a37283ae450d83498621820bde1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Username: Saphirah
 --- !u!1 &1579060441
 GameObject:
   m_ObjectHideFlags: 0

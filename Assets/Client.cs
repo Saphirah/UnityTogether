@@ -14,6 +14,7 @@ public class Client : Communication
     
     private CameraDrawer drawer;
     private GameObjectSync gameObjectSync;
+    private FileSync fileSync;
 
     public bool AutoConnect = true;
 
@@ -21,35 +22,48 @@ public class Client : Communication
     private static void AutoConnectToServer()
     {
         Client client = FindObjectOfType<Client>();
+        if(!client) return;
         if(!client.AutoConnect) return;
         client.ConnectToServer();
         AssemblyReloadEvents.beforeAssemblyReload += () =>
         {
-            client.client.Close();
+            client.client?.Close();
         };
     }
 
     public void ConnectToServer()
     {
-        client = new TcpClient();
-        client.Connect(IPAddress.Parse(IP), Port);
-        EditorCoroutineUtility.StartCoroutine(ListenToClient(client), this);
-        EditorCoroutineUtility.StartCoroutine(UpdateLoop(), this);
-        OnConnect?.Invoke();
-        Instance = this;
+        try
+        {
+            client = new TcpClient();
+            client.Connect(IPAddress.Parse(IP), Port);
+            EditorCoroutineUtility.StartCoroutine(ListenToClient(client), this);
+            EditorCoroutineUtility.StartCoroutine(UpdateLoop(), this);
+            OnConnect?.Invoke();
+            Instance = this;
+        } catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
+
+    public void Disconnect() => client.Close();
 
     public IEnumerator UpdateLoop()
     {
-        drawer ??= new CameraDrawer(this);
-        gameObjectSync ??= new GameObjectSync(this);
+        Debug.Log("Update Loop started");
+        //drawer ??= new CameraDrawer(this);
+        //gameObjectSync ??= new GameObjectSync(this);
+        //fileSync ??= new FileSync(this);
         while (IsConnected())
         {
-            yield return new WaitForSeconds(1f / ticksPerSecond);
+            yield return new WaitForSecondsEditor(1f / ticksPerSecond);
             OnUpdate?.Invoke();
+            Debug.Log("Updating");
         }
+        Debug.Log("Update Loop ended");
     }
-    
+
     public override bool IsConnected() => client is {Connected: true};
     protected override Stream GetStream() => client.GetStream();
 }
@@ -65,8 +79,16 @@ public class ClientEditor : Editor
 
         if(client.IsConnected())
             EditorGUILayout.HelpBox("Connected to server", MessageType.Info);
-        if (GUILayout.Button("Connect"))
-            client.ConnectToServer();
+        if (!client.IsConnected())
+        {
+            if (GUILayout.Button("Connect"))
+                client.ConnectToServer();
+        }
+        else
+        {
+            if (GUILayout.Button("Disconnect"))
+                client.Disconnect();
+        }
         if (GUILayout.Button("Start Server"))
         {
             //Start server in a CMD Console
