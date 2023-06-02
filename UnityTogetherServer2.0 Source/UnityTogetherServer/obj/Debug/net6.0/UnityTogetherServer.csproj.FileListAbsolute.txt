@@ -1,0 +1,37 @@
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\appsettings.Development.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\appsettings.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\UnityTogetherServer.staticwebassets.runtime.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\UnityTogetherServer.exe
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\UnityTogetherServer.deps.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\UnityTogetherServer.runtimeconfig.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\UnityTogetherServer.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\ref\UnityTogetherServer.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\UnityTogetherServer.pdb
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\Newtonsoft.Json.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\bin\Debug\net6.0\System.Net.WebSockets.WebSocketProtocol.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.csproj.AssemblyReference.cache
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.AssemblyInfoInputs.cache
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.AssemblyInfo.cs
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.csproj.CoreCompileInputs.cache
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.MvcApplicationPartsAssemblyInfo.cache
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.RazorAssemblyInfo.cache
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.RazorAssemblyInfo.cs
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\staticwebassets.build.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\staticwebassets.development.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\scopedcss\Pages\Shared\_Layout.cshtml.rz.scp.css
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\scopedcss\bundle\UnityTogetherServer.styles.css
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\scopedcss\projectbundle\UnityTogetherServer.bundle.scp.css
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.csproj.CopyComplete
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\ref\UnityTogetherServer.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.pdb
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer2.0 Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.genruntimeconfig.cache
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\appsettings.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.staticwebassets.runtime.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.exe
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.deps.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.runtimeconfig.json
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\ref\UnityTogetherServer.dll
+D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.pdb
