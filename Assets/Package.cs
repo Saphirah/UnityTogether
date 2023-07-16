@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Package
+public abstract class Package
 {
     public DateTime time = DateTime.Now;
 
@@ -15,10 +15,15 @@ public class Package
         typeof(GameObjectDestroyPackage),
         typeof(FileDeletedPackage),
         typeof(FileRenamedPackage),
+        typeof(GameObjectAddComponentPackage),
+        typeof(GameObjectRemoveComponentPackage),
+        typeof(ChangeScenePackage),
     };
 
-    public Package(){}
+    public Package() { }
     public Package(string json) => Deserialize(json);
+    
+    public virtual void Execute() {}
 
     public static int GetPackageIndex(Package package) => packages.IndexOf(package.GetType());
     public override string ToString() => JsonUtility.ToJson(this);

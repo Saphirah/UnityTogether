@@ -10,14 +10,14 @@ public class MyHub : Hub
 
     public async Task SendPackage(int packageID, string username, string package)
     {
-        Console.WriteLine(package);
+        Console.WriteLine("Package received from " + username + ": " + package);
         packages.Add((packageID, username, package));
         await Clients.Others.SendAsync("ReceivePackage", packageID, username, package);
     }
 
     public async Task SendFile(string username, string filePath, string fileData)
     {
-        Console.WriteLine(filePath);
+        Console.WriteLine("File received from " + username + ": " + filePath);
         files.Add((username, filePath, fileData));
         await Clients.Others.SendAsync("ReceiveFile", username, filePath, fileData);
     }

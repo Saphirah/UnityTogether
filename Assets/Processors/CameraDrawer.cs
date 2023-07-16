@@ -38,7 +38,6 @@ public class CameraDrawer : Processor
             rotation = transform.rotation
         };
         communication.SendPackage(cameraTransformPackage);
-        Debug.Log("Sent camera transform");
     }
     
     public void Render()

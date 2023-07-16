@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 [ExecuteInEditMode]
 public class UnityTogetherClient : MonoBehaviour
 {
-    public string Username = "Saphirah";
+    public string Username { get; private set; }
+    public string IP = "localhost";
     
     private HubConnection connection;
     private List<Processor> processors;
@@ -18,9 +19,11 @@ public class UnityTogetherClient : MonoBehaviour
     public Action<int, string, string> OnMessageReceived;
     public Action<string, string, string> OnFileReceived;
     public Action OnRender;
+    private bool autoRefresh = false;
 
     public void SendPackage(Package package) => connection?.SendAsync("SendPackage", Package.GetPackageIndex(package), Username, package.ToString());
     public void SendFile(string filePath, string fileContent) => connection?.SendAsync("SendFile", Username, filePath, fileContent);
+    public static UnityTogetherClient Instance { get; private set; }
 
     [InitializeOnLoadMethod]
     private static void Initialize() => EditorApplication.update += ExecuteActions;
@@ -41,10 +44,14 @@ public class UnityTogetherClient : MonoBehaviour
 
     private void OnEnable()
     {
+        Username = EditorPrefs.GetString("UnityTogetherUsername", "Saphirah");
         AssemblyReloadEvents.afterAssemblyReload += Connect;
+        if(Instance != null)
+            Debug.LogWarning("Multiple UnityTogetherClient instances detected. This is not supported.");
+        Instance = this;
         
         if (processors != null) return;
- 
+
         processors = new List<Processor>()
         {
             new CameraDrawer(this),
@@ -56,6 +63,7 @@ public class UnityTogetherClient : MonoBehaviour
     private void OnDisable()
     {
         AssemblyReloadEvents.afterAssemblyReload -= Connect;
+        Disconnect();
     }
 
     public void Connect() => ConnectToServer();
@@ -64,7 +72,7 @@ public class UnityTogetherClient : MonoBehaviour
     public async Task ConnectToServer()
     {
         connection = new HubConnectionBuilder()
-            .WithUrl("http://localhost:5000/myhub")
+            .WithUrl("http://" + IP + ":5000/myhub")
             .Build();
 
         connection.On<int, string, string>("ReceivePackage", (packageID, username, package) =>
@@ -79,6 +87,9 @@ public class UnityTogetherClient : MonoBehaviour
             OnFileReceived?.Invoke(username, filePath, fileData);
         });
         
+        autoRefresh = EditorPrefs.GetBool("kAutoRefresh");
+        EditorPrefs.SetBool("kAutoRefresh", false);
+
         try
         {
             await connection.StartAsync();
@@ -86,14 +97,25 @@ public class UnityTogetherClient : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.Log("Error connecting to hub: " + ex.Message);
+            Debug.LogError("Error connecting to hub: " + ex.Message);
             Disconnect();
         }
     }
     
     public bool IsConnected() => connection is {State: HubConnectionState.Connected};
-    public void Disconnect() => connection.StopAsync();
-    private void OnDrawGizmos() => OnRender?.Invoke();
+
+    public void Disconnect()
+    {
+        if(IsConnected())
+            connection?.StopAsync();
+        EditorPrefs.SetBool("kAutoRefresh", autoRefresh);
+    } 
+
+    private void OnDrawGizmos()
+    {
+        if(IsConnected())
+            OnRender?.Invoke();
+    }
 }
 
 [CustomEditor(typeof(UnityTogetherClient))]
@@ -124,5 +146,11 @@ public class UnityTogetherClientEditor : Editor
             
             System.Diagnostics.Process.Start(path);
         }
+        
+        GUILayout.Space(20);
+        
+        if (GUILayout.Button("Recompile Scripts"))
+            AssetDatabase.Refresh();
+        
     }
 }

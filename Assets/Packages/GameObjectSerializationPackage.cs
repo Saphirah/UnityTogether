@@ -8,6 +8,7 @@ public class GameObjectSerializationPackage : Package
     
     public string GameObjectHierarchy;
     public string ComponentName;
+    public int ComponentIndex;
     public string VariableName;
     public string Value;
 }

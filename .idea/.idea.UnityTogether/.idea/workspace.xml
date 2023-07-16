@@ -1,13 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="63c2d7fc-69d2-4ff7-8ea8-ce86b54683a0" name="Changes" comment="" />
+    <list default="true" id="63c2d7fc-69d2-4ff7-8ea8-ce86b54683a0" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Assets/1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/1.png.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Editor/MyCustomSettings.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Editor/MyCustomSettings.asset.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/GameObjectDictionary.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/GameObjectDictionary.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/New Material 1.mat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/New Material 1.mat.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/New Material.mat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/New Material.mat.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Settings.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Settings/UnityTogetherSettings.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Settings/UnityTogetherSettings.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ProjectSettings/BurstAotSettings_StandaloneWindows.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ProjectSettings/CommonBurstAotSettings.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ProjectSettings/TimelineSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/ObjectChangeEventExample.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/ObjectChangeEventExample.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Package.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Package.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectCreatePackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectCreatePackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectSerializationPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectSerializationPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Processor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processor.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Processors/CameraDrawer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processors/CameraDrawer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Processors/FileSync.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processors/FileSync.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/UnityTogetherClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/UnityTogetherClient.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/QualitySettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/QualitySettings.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/RiderScriptEditorPersistedState.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/RiderScriptEditorPersistedState.asset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer/net6.0/UnityTogetherServer.dll" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer/net6.0/UnityTogetherServer.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer/net6.0/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer/net6.0/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/MyHub.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/MyHub.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.dll" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/rider.project.restore.info" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/staticwebassets.pack.sentinel" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/staticwebassets.pack.sentinel" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="e7565475825d2284d8c3dca935b50d8610b3ef9e" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitSEFilterConfiguration">
@@ -19,12 +69,20 @@
     </file-type-list>
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/1332c534a8a44623b2e5cc943a0b790e157400/f4/a6714a04/WaitForSeconds.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/780782bc035845f9909cebbd4c983ae380e400/37/cc41da0e/Undo.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/5a41d6b7189842eca409fd0b1c3e3dcf17bf78/ee/c475327b/StringComparison.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/780782bc035845f9909cebbd4c983ae380e400/0b/d6057926/EditorSceneManager.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/780782bc035845f9909cebbd4c983ae380e400/a4/9ca13171/SerializedProperty.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/780782bc035845f9909cebbd4c983ae380e400/c8/82458fe4/SerializedPropertyType.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/780782bc035845f9909cebbd4c983ae380e400/f4/31abdf00/ObjectChangeEvents.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3ea01e77be99618395f448b16bd7cc2bd4248bd9e5d8474964b2d97f39c5d74/System.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/ffe351aa6232372f4a3b8c3ff36a636f33de226f60e607acbfe569289d7289d/System.IO.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Package.cs" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.properties@2.1.0-exp.2/Runtime/PropertyVisitors/PropertyVisitor.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.editorcoroutines@1.0.0/Editor/EditorCoroutine.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.editorcoroutines@1.0.0/Editor/EditorCoroutineUtility.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.properties@2.1.0-exp.2/Runtime/PropertyVisitors/PropertyVisitor.cs" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
   </component>
   <component name="ProjectId" id="2KhXYS3m9oGUt13o4ldVbWaJtmj" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
@@ -35,19 +93,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
-    <property name="DebuggerViewTab_PTCS_FirstProportionKey" value="0.34994584" />
-    <property name="DebuggerViewTab_PTCS_LastProportionKey" value="0.0" />
-    <property name="Discover.Launch.Via.Unity" value="true" />
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="nodejs_package_manager_path" value="npm" />
-    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
-    <property name="vue.rearranger.settings.migration" value="true" />
-  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Discover.Launch.Via.Unity&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;rider.run.widget.enabled.cache&quot;: &quot;false&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
+    <configuration name="UnitTests (batch mode)" type="RunUnityExe" factoryName="Unity Executable">
+      <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2021.3.0f1\Editor\Unity.exe" />
+      <option name="PROGRAM_PARAMETERS" value="-runTests -batchmode -projectPath &quot;D:\CodingProjects\Game Projects\UnityTogether&quot; -testResults Logs/results.xml -testPlatform EditMode -debugCodeOptimization" />
+      <option name="WORKING_DIRECTORY" value="D:\CodingProjects\Game Projects\UnityTogether" />
+      <option name="PASS_PARENT_ENVS" value="1" />
+      <option name="USE_EXTERNAL_CONSOLE" value="0" />
+      <method v="2" />
+    </configuration>
     <configuration name="Attach to Unity Editor &amp; Play" type="UNITY_DEBUG_RUN_CONFIGURATION" factoryName="UNITY_ATTACH_AND_PLAY" show_console_on_std_err="false" show_console_on_std_out="false" port="50000" address="localhost">
       <option name="allowRunningInParallel" value="false" />
       <option name="listenPortForConnections" value="false" />
@@ -98,6 +162,11 @@
       <workItem from="1685549860282" duration="4685000" />
       <workItem from="1685695200857" duration="39000" />
       <workItem from="1685695378216" duration="1841000" />
+      <workItem from="1685697247006" duration="3914000" />
+      <workItem from="1688748120640" duration="84000" />
+      <workItem from="1689365432199" duration="19837000" />
+      <workItem from="1689417559686" duration="11188000" />
+      <workItem from="1689538786957" duration="217000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1675826684288</created>
@@ -106,7 +175,21 @@
       <option name="project" value="LOCAL" />
       <updated>1675826684288</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Fixed File Operation">
+      <created>1685697459249</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1685697459249</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Fixed File Sync Error">
+      <created>1685697544798</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1685697544798</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -125,12 +208,32 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="Initial Commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
+    <MESSAGE value="Fixed File Operation" />
+    <MESSAGE value="Fixed File Sync Error" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed File Sync Error" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs</url>
+          <line>73</line>
+          <properties documentPath="D:\CodingProjects\Game Projects\UnityTogether\Assets\Processors\GameObjectSync.cs" initialLine="61" containingFunctionPresentation="method 'OnMessageReceived'">
+            <startOffsets>
+              <option value="3321" />
+            </startOffsets>
+            <endOffsets>
+              <option value="3386" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

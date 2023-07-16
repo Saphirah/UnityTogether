@@ -3,77 +3,143 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using Unity.Serialization.Json;
+using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class GameObjectSync : Processor
 {
+    private const string SEPERATOR = "$&%-/!@#";
+    
     public GameObjectSync(UnityTogetherClient com) : base(com)
     {
         Undo.postprocessModifications += OnPostprocessModifications;
     }
-    
+
     private UndoPropertyModification[] OnPostprocessModifications(UndoPropertyModification[] modifications)
     {
-        Debug.Log(JsonSerialization.ToJson(modifications));
         foreach (UndoPropertyModification modification in modifications)
         {
-            if(modification.currentValue.target is Component component)
-                communication.SendPackage(new GameObjectSerializationPackage()
-                {
-                    ComponentName = component.GetType().Name,
-                    GameObjectHierarchy = GetPath(component.transform),
-                    Value = modification.currentValue.value,
-                    VariableName = modification.currentValue.propertyPath
-                });
+            if (modification.currentValue.target is not Component component) continue;
+            
+            SerializedProperty property = GetSerializedProperty(component, modification.currentValue.propertyPath);
+            communication.SendPackage(new GameObjectSerializationPackage()
+            {
+                ComponentName = component.GetType().AssemblyQualifiedName,
+                ComponentIndex = component.GetComponents(component.GetType()).ToList().IndexOf(component),
+                GameObjectHierarchy = GetPath(component.transform),
+                Value = GetSerializedPropertyValue(property)?.ToString(),
+                VariableName = modification.currentValue.propertyPath
+            });
         }
 
         return modifications;
     }
 
+    private SerializedProperty GetSerializedProperty(Component component, string propertyPath)
+    {
+        SerializedObject serializedObject = new SerializedObject(component);
+        return serializedObject.FindProperty(propertyPath);
+    }
+
     protected override void OnMessageReceived(int index, string msg, string userID)
     {
+        if(UnityTogetherClient.Instance.Username == userID) return;
+        ObjectChangeEventsExample.SetActive(false);
         switch (index)
         {
+            //Changed SerializedProperty
             case 1:
-                UnityTogetherClient.Enqueue(() =>
+                GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);
+                GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);
+                if (gameObject == null) return;
+                Type serializedPropertyComponentType = Type.GetType(serializationPackage.ComponentName);
+                Component[] components = gameObject.GetComponents(serializedPropertyComponentType);
+                if (components.Length <= serializationPackage.ComponentIndex)
                 {
-                    GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);
-                    GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);
-                    if (gameObject == null) return;
-                    Component component = gameObject.GetComponents<Component>().ToList()
-                        .Find(c => c.GetType().Name == serializationPackage.ComponentName);
-                    if (component == null) return;
-                    SerializedObject serializedObject = new SerializedObject(component);
-                    SerializedProperty iterator = serializedObject.GetIterator();
-                    iterator.Next(true);
-                    while (iterator.NextVisible(true))
-                    {
-                        string path = iterator.propertyPath;
-                        if (path != serializationPackage.VariableName) continue;
-                        SetSerializedPropertyValue(iterator, serializationPackage.Value);
-                        serializedObject.ApplyModifiedProperties();
-                        break;
-                    }
-                });
+                    Debug.LogWarning("Component at Index not found: " + serializationPackage.ComponentName + " " + serializationPackage.ComponentIndex);
+                    return;
+                }
+                Component component = components[serializationPackage.ComponentIndex];
+                if (component == null) return;
+                SerializedObject serializedObject = new SerializedObject(component);
+                SerializedProperty iterator = serializedObject.GetIterator();
+                iterator.Next(true);
+                while (iterator.Next(true))
+                {
+                    string path = iterator.propertyPath;
+                    if (path != serializationPackage.VariableName) continue;
+                    SetSerializedPropertyValue(iterator, serializationPackage.Value);
+                    serializedObject.ApplyModifiedProperties();
+                    break;
+                }
                 break;  
+            //Changed Parent
             case 2:
-                if(Communication.Instance.Username == userID) return;
                 GameObjectChangeParentPackage changeParentPackage = new GameObjectChangeParentPackage(msg);
                 changeParentPackage.GameObject.transform.SetParent(changeParentPackage.NewParent?.transform);
                 break;
+            //Created gameObject
             case 3:
-                if(Communication.Instance.Username == userID) return;
                 GameObjectCreatePackage createPackage = new GameObjectCreatePackage(msg);
-                GameObject newGameObject = JsonSerialization.FromJson<GameObject>(msg);
+                GameObject newGameObject = new GameObject(createPackage.GameObjectName);
                 newGameObject.transform.parent = createPackage.NewParent.transform;
                 break;
+            //Destroy GameObject
             case 4:
-                if(Communication.Instance.Username == userID) return;
                 GameObjectDestroyPackage destroyPackage = new GameObjectDestroyPackage(msg);
                 GameObject.DestroyImmediate(destroyPackage.GameObject);
                 break;
+            //Add Component
+            case 7:
+                GameObjectAddComponentPackage addComponentPackage = new GameObjectAddComponentPackage(msg);
+                GameObject addComponentGameObject = GameObject.Find(addComponentPackage.GameObjectHierarchy);
+                if (addComponentGameObject == null)
+                {
+                    Debug.LogWarning("GameObject not found: " + addComponentPackage.GameObjectHierarchy);
+                    return;
+                }
+                Type componentType = Type.GetType(addComponentPackage.ComponentName);
+                if (componentType == null)
+                {
+                    Debug.LogWarning("Component Type not found: " + addComponentPackage.ComponentName);
+                    return;
+                }
+                addComponentGameObject.AddComponent(componentType);
+                break;
+            //Remove Component
+            case 8:
+                GameObjectRemoveComponentPackage removeComponentPackage = new GameObjectRemoveComponentPackage(msg);
+                GameObject removeComponentGameObject = GameObject.Find(removeComponentPackage.GameObjectHierarchy);
+                if (removeComponentGameObject == null)
+                {
+                    Debug.LogWarning("GameObject not found: " + removeComponentPackage.GameObjectHierarchy);
+                    return;
+                }
+                Type removeComponentType = Type.GetType(removeComponentPackage.ComponentName);
+                if (removeComponentType == null)
+                {
+                    Debug.LogWarning("Component Type not found: " + removeComponentPackage.ComponentName);
+                    return;
+                }
+                Component[] removeComponents = removeComponentGameObject.GetComponents(removeComponentType);
+                if (removeComponents.Length <= removeComponentPackage.ComponentIndex)
+                {
+                    Debug.LogWarning("Component at Index not found: " + removeComponentPackage.ComponentName + " " + removeComponentPackage.ComponentIndex);
+                    return;
+                }
+                Object.DestroyImmediate(removeComponents[removeComponentPackage.ComponentIndex]);
+                break;
+            //Changed Scene
+            case 9:
+                ChangeScenePackage changeScenePackage = new ChangeScenePackage(msg);
+                EditorSceneManager.SaveOpenScenes();
+                EditorSceneManager.OpenScene(changeScenePackage.SceneName);
+                break;
         }
+        ObjectChangeEventsExample.SetActive(true);
     }
 
     public static string GetPath(Transform current)
@@ -83,7 +149,25 @@ public class GameObjectSync : Processor
         return GetPath(current.parent) + "/" + current.name;
     }
 
-    private object GetSerializedPropertyValue(SerializedProperty iterator)
+    private static string GetPath(Component component)
+    {
+        return component.gameObject.GetPath() + SEPERATOR +
+               component.gameObject.GetComponents(component.GetType()).ToList().IndexOf(component) + SEPERATOR +
+               component.GetType().AssemblyQualifiedName;
+    }
+
+    private Component GetComponentFromPath(string path)
+    {
+        string[] split = path.Split(SEPERATOR);
+        GameObject gameObject = GameObject.Find(split[0]);
+        if (gameObject == null) return null;
+        Type componentType = Type.GetType(split[2]);
+        if (componentType == null) return null;
+        Component[] components = gameObject.GetComponents(componentType);
+        return components.Length <= int.Parse(split[1]) ? null : components[int.Parse(split[1])];
+    }
+
+    public static object GetSerializedPropertyValue(SerializedProperty iterator)
     {
         try
         {
@@ -92,11 +176,17 @@ public class GameObjectSync : Processor
                 SerializedPropertyType.Vector3 => iterator.vector3Value,
                 SerializedPropertyType.Quaternion => iterator.quaternionValue,
                 SerializedPropertyType.Float => iterator.floatValue,
-                SerializedPropertyType.Integer => iterator.intValue,
+                SerializedPropertyType.Integer => iterator.longValue,
                 SerializedPropertyType.Boolean => iterator.boolValue,
                 SerializedPropertyType.String => iterator.stringValue,
-                SerializedPropertyType.ObjectReference => iterator.objectReferenceInstanceIDValue,
-                SerializedPropertyType.Enum => iterator.enumValueIndex,
+                SerializedPropertyType.ObjectReference => 
+                    AssetDatabase.Contains(iterator.objectReferenceValue) ? 
+                        AssetDatabase.GetAssetPath(iterator.objectReferenceValue) : 
+                        iterator.objectReferenceValue is Component component ? 
+                            GetPath(component) : 
+                            iterator.objectReferenceValue is GameObject gameObject ? 
+                                GetPath(gameObject.transform) : "",
+            SerializedPropertyType.Enum => iterator.enumValueIndex,
                 SerializedPropertyType.Color => iterator.colorValue,
                 SerializedPropertyType.LayerMask => iterator.intValue,
                 SerializedPropertyType.Vector2 => iterator.vector2Value,
@@ -106,7 +196,6 @@ public class GameObjectSync : Processor
                 SerializedPropertyType.Character => iterator.intValue,
                 SerializedPropertyType.AnimationCurve => iterator.animationCurveValue,
                 SerializedPropertyType.Bounds => iterator.boundsValue,
-                SerializedPropertyType.Gradient => null,
                 SerializedPropertyType.ExposedReference => iterator.exposedReferenceValue,
                 SerializedPropertyType.FixedBufferSize => iterator.intValue,
                 SerializedPropertyType.Vector2Int => iterator.vector2IntValue,
@@ -139,7 +228,7 @@ public class GameObjectSync : Processor
                 iterator.floatValue = float.Parse(value);
                 break;
             case SerializedPropertyType.Integer:
-                iterator.intValue = int.Parse(value);
+                iterator.longValue = long.Parse(value);
                 break;
             case SerializedPropertyType.Boolean:
                 iterator.boolValue = Convert.ToBoolean(value);
@@ -148,7 +237,14 @@ public class GameObjectSync : Processor
                 iterator.stringValue = value;
                 break;
             case SerializedPropertyType.ObjectReference:
-                //iterator.objectReferenceValue = (UnityEngine.Object) value;
+                Object obj = null;
+                if (value.Contains(SEPERATOR))
+                    obj = GetComponentFromPath(value);
+                if(obj == null)
+                    obj = GameObject.Find(value);
+                if(obj == null)
+                    obj = AssetDatabase.LoadAssetAtPath<Object>(value);
+                iterator.objectReferenceValue = obj;
                 break;
             case SerializedPropertyType.Enum:
                 iterator.enumValueIndex = int.Parse(value);
@@ -258,13 +354,16 @@ public class GameObjectSync : Processor
     
     public static Color StringToColor(string sVector)
     {
-        string[] sArray = sVector.Replace("(", "").Replace(")","").Split(',');
+        // Convert the string back to a 32-bit integer
+        Debug.Log(sVector);
+        uint colorValue = uint.Parse(sVector);
         
-        return new Color(
-            float.Parse(sArray[0]),
-            float.Parse(sArray[1]),
-            float.Parse(sArray[2]),
-            float.Parse(sArray[3]));
+        return new Color32(
+            (byte)((colorValue >> 24) & 255),
+            (byte)((colorValue >> 16) & 255),
+            (byte)((colorValue >> 8) & 255),
+            (byte)(colorValue & 255)
+        );
     }
     
     public static Vector2Int StringToVector2Int(string sVector)

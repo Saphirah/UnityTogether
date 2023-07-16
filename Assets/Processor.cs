@@ -13,13 +13,17 @@ public abstract class Processor
     
     private void MessageReceived(int index, string msg, string userID)
     {
-        try
+        UnityTogetherClient.Enqueue(() =>
         {
-            OnMessageReceived(index, msg, userID);
-        } catch (Exception e)
-        {
-            Debug.LogError(e);
-        }
+            try
+            {
+                OnMessageReceived(index, msg, userID);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e);
+            }
+        });
     }
     
     protected abstract void OnMessageReceived(int index, string msg, string userID);

@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 
 public class FileSync : Processor
 {
     private FileSystemWatcher watcher;
     private string dataPath;
+    
+    private static List<string> changedFiles = new List<string>();
     
     public FileSync(UnityTogetherClient com) : base(com)
     {
@@ -21,16 +25,19 @@ public class FileSync : Processor
         
         watcher.EnableRaisingEvents = true;
         
-        com.OnFileReceived += OnFileReceived;
+        com.OnFileReceived += OnFileReceived; 
     }
 
     protected void OnFileReceived(string username, string filePath, string fileContent)
     {
         Debug.Log("File changed: " + GetRelativePath(filePath));
-        byte[] fileBytes = Convert.FromBase64String(fileContent);
+        byte[] newFileBytes = Convert.FromBase64String(fileContent);
+        byte[] fileBytes = File.ReadAllBytes(filePath);
+        if (newFileBytes == fileBytes) return;
         PerformSafeFileOperation(() => 
         {
-            File.WriteAllBytes(dataPath + filePath, fileBytes);
+            changedFiles.Add(filePath);
+            File.WriteAllBytes(dataPath + filePath, newFileBytes);
         });
     }
 
@@ -59,11 +66,18 @@ public class FileSync : Processor
 
     private void OnFileChanged(object sender, FileSystemEventArgs e)
     {
-        Debug.Log("File changed: " + GetRelativePath(e.FullPath));
+        string relativePath = GetRelativePath(e.FullPath);
+        if (changedFiles.Contains(relativePath))
+        {
+            changedFiles.Remove(relativePath);
+            return;
+        }
+        Debug.Log("File changed: " + relativePath);
         communication.SendFile(
-            GetRelativePath(e.FullPath), 
+            relativePath, 
             Convert.ToBase64String(File.ReadAllBytes(e.FullPath))
         );
+        AssetDatabase.ImportAsset(GetRelativePath(e.FullPath));
     }
     
     private void OnFileDeleted(object sender, FileSystemEventArgs e)
@@ -73,6 +87,7 @@ public class FileSync : Processor
         {
             path = GetRelativePath(e.FullPath)
         });
+        AssetDatabase.ImportAsset(GetRelativePath(e.FullPath));
     }
     
     private void OnFileRenamed(object sender, RenamedEventArgs e)
@@ -83,6 +98,7 @@ public class FileSync : Processor
             oldPath = GetRelativePath(e.OldFullPath),
             newPath = GetRelativePath(e.FullPath)
         });
+        AssetDatabase.MoveAsset(GetRelativePath(e.OldFullPath), GetRelativePath(e.FullPath));
     }
     
     private void PerformSafeFileOperation(Action action)
