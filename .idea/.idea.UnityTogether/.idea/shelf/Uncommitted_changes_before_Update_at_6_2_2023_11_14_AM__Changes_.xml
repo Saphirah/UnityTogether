@@ -1,0 +1,39 @@
+<changelist name="Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]" date="1685697256692" recycled="false" toDelete="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Update at 6/2/2023 11:14 AM [Changes]" />
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/project.nuget.cache" />
+    <option name="AFTER_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/project.nuget.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/project.nuget.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.dll" />
+    <option name="AFTER_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.dll" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/UnityTogetherServer.dll" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer/net6.0/UnityTogetherServer.dll" />
+    <option name="AFTER_PATH" value="UnityTogetherServer/net6.0/UnityTogetherServer.dll" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/UnityTogetherServer1.dll" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer/net6.0/ref/UnityTogetherServer.dll" />
+    <option name="AFTER_PATH" value="UnityTogetherServer/net6.0/ref/UnityTogetherServer.dll" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/UnityTogetherServer2.dll" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.genruntimeconfig.cache" />
+    <option name="AFTER_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.genruntimeconfig.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/UnityTogetherServer.genruntimeconfig.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/ref/UnityTogetherServer.dll" />
+    <option name="AFTER_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/ref/UnityTogetherServer.dll" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/UnityTogetherServer3.dll" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.assets.cache" />
+    <option name="AFTER_PATH" value="UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.assets.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/shelf/Uncommitted_changes_before_Update_at_6_2_2023_11_14_AM_[Changes]/UnityTogetherServer.assets.cache" />
+  </binary>
+</changelist>

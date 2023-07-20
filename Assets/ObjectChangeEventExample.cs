@@ -27,10 +27,7 @@ public class ObjectChangeEventsExample
                 case ObjectChangeKind.ChangeScene:
                     stream.GetChangeSceneEvent(i, out var changeSceneEvent);
                     Debug.Log($"Change Scene Event: {changeSceneEvent.scene}");
-                    UnityTogetherClient.Instance?.SendPackage(new ChangeScenePackage()
-                    { 
-                        SceneName = changeSceneEvent.scene.path
-                    });
+                    UnityTogetherClient.Instance?.SendPackage(new ChangeScenePackage() { SceneName = changeSceneEvent.scene.path });
                     break;
                 case ObjectChangeKind.CreateGameObjectHierarchy:
                     stream.GetCreateGameObjectHierarchyEvent(i, out var createGameObjectHierarchyEvent);
@@ -99,7 +96,6 @@ public class ObjectChangeEventsExample
 
                     Debug.Log($"Change GameObject structure: {gameObjectStructure} in scene {changeGameObjectStructure.scene}.");
                     break;
-                //Implemented
                 case ObjectChangeKind.ChangeGameObjectParent:
                     stream.GetChangeGameObjectParentEvent(i, out var changeGameObjectParent);
                     var gameObjectChanged = EditorUtility.InstanceIDToObject(changeGameObjectParent.instanceId) as GameObject;
@@ -117,14 +113,13 @@ public class ObjectChangeEventsExample
                     var goOrComponent = EditorUtility.InstanceIDToObject(changeGameObjectOrComponent.instanceId);
                     if (goOrComponent is GameObject go)
                     {   
-                        //Debug.Log($"GameObject {go} change properties in scene {changeGameObjectOrComponent.scene}.");
+                        Debug.Log($"GameObject {go} change properties in scene {changeGameObjectOrComponent.scene}.");
                     }
                     else if (goOrComponent is Component component)
                     {
-                        //Debug.Log($"Component {component} change properties in scene {changeGameObjectOrComponent.scene}.");
+                        Debug.Log($"Component {component} change properties in scene {changeGameObjectOrComponent.scene}.");
                     }
                     break;
-                //Implemented
                 case ObjectChangeKind.DestroyGameObjectHierarchy:
                     stream.GetDestroyGameObjectHierarchyEvent(i, out var destroyGameObjectHierarchyEvent);
                     string path = GameObjectDictionary.GetPath(destroyGameObjectHierarchyEvent.instanceId);
@@ -134,33 +129,11 @@ public class ObjectChangeEventsExample
                         GameObjectHierarchy = path,
                     });
                     break;
-                case ObjectChangeKind.CreateAssetObject:
-                    stream.GetCreateAssetObjectEvent(i, out var createAssetObjectEvent);
-                    var createdAsset = EditorUtility.InstanceIDToObject(createAssetObjectEvent.instanceId);
-                    var createdAssetPath = AssetDatabase.GUIDToAssetPath(createAssetObjectEvent.guid);
-                    Debug.Log($"Created asset {createdAsset} at {createdAssetPath} in scene {createAssetObjectEvent.scene}.");
-                    break;
-                case ObjectChangeKind.DestroyAssetObject:
-                    stream.GetDestroyAssetObjectEvent(i, out var destroyAssetObjectEvent);
-                    var destroyAsset = EditorUtility.InstanceIDToObject(destroyAssetObjectEvent.instanceId);
-                    var destroyAssetPath = AssetDatabase.GUIDToAssetPath(destroyAssetObjectEvent.guid);
-                    Debug.Log($"Destroy asset {destroyAsset} at {destroyAssetPath} in scene {destroyAssetObjectEvent.scene}.");
-                    break;
                 case ObjectChangeKind.ChangeAssetObjectProperties:
                     stream.GetChangeAssetObjectPropertiesEvent(i, out var changeAssetObjectPropertiesEvent);
                     var changeAsset = EditorUtility.InstanceIDToObject(changeAssetObjectPropertiesEvent.instanceId);
                     var changeAssetPath = AssetDatabase.GUIDToAssetPath(changeAssetObjectPropertiesEvent.guid);
                     Debug.Log($"Change asset {changeAsset} at {changeAssetPath} in scene {changeAssetObjectPropertiesEvent.scene}.");
-                    break;
-                case ObjectChangeKind.UpdatePrefabInstances:
-                    stream.GetUpdatePrefabInstancesEvent(i, out var updatePrefabInstancesEvent);
-                    var ss = new StringBuilder();
-                    ss.AppendLine($"Update Prefabs in scene {updatePrefabInstancesEvent.scene}");
-                    foreach (var prefabId in updatePrefabInstancesEvent.instanceIds)
-                    {
-                        ss.AppendLine(EditorUtility.InstanceIDToObject(prefabId).ToString());
-                    }
-                    Debug.Log(ss.ToString());
                     break;
             }
         }

@@ -1,5 +1,5 @@
-using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class GameObjectDestroyPackage : Package
 {
@@ -16,4 +16,6 @@ public class GameObjectDestroyPackage : Package
             return GameObject.Find(GameObjectHierarchy);
         }
     }
+
+    public override void Execute() => Object.DestroyImmediate(GameObject);
 }

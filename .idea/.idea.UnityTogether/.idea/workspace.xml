@@ -2,50 +2,30 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="63c2d7fc-69d2-4ff7-8ea8-ce86b54683a0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/1.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/1.png.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Editor/MyCustomSettings.asset" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Editor/MyCustomSettings.asset.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/GameObjectDictionary.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/GameObjectDictionary.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/New Material 1.mat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/New Material 1.mat.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/New Material.mat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/New Material.mat.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Settings.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Settings/UnityTogetherSettings.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Settings/UnityTogetherSettings.cs.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ProjectSettings/BurstAotSettings_StandaloneWindows.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ProjectSettings/CommonBurstAotSettings.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ProjectSettings/TimelineSettings.asset" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/FilePackage.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/Packages/FilePackage.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/ObjectChangeEventExample.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/ObjectChangeEventExample.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Package.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Package.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/CameraTransformPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/CameraTransformPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/FileDeletedPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/FileDeletedPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/FileRenamedPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/FileRenamedPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectChangeParentPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectChangeParentPackage.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectCreatePackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectCreatePackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectDestroyPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectDestroyPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectSerializationPackage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Packages/GameObjectSerializationPackage.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/MessagePackage.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Packages/MessagePackage.cs.meta" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Processor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Processors/CameraDrawer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processors/CameraDrawer.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Processors/FileSync.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processors/FileSync.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Assets/UnityTogetherClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/UnityTogetherClient.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ProjectSettings/QualitySettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/QualitySettings.asset" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ProjectSettings/RiderScriptEditorPersistedState.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/RiderScriptEditorPersistedState.asset" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer/net6.0/UnityTogetherServer.dll" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer/net6.0/UnityTogetherServer.dll" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer/net6.0/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer/net6.0/appsettings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/MyHub.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/MyHub.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/appsettings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.dll" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.dll" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/rider.project.restore.info" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/staticwebassets.pack.sentinel" beforeDir="false" afterPath="$PROJECT_DIR$/UnityTogetherServer2.0 Source/UnityTogetherServer/obj/staticwebassets.pack.sentinel" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +56,11 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/780782bc035845f9909cebbd4c983ae380e400/f4/31abdf00/ObjectChangeEvents.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3ea01e77be99618395f448b16bd7cc2bd4248bd9e5d8474964b2d97f39c5d74/System.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/ffe351aa6232372f4a3b8c3ff36a636f33de226f60e607acbfe569289d7289d/System.IO.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/CodingProjects/Game Projects/UnityTogether/Assets/Package.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Assets/Package.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="mock://D:/CodingProjects/Game Projects/UnityTogether/Assets/Processor.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/CodingProjects/Game Projects/UnityTogether/Assets/Processors/CameraDrawer.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://D:/CodingProjects/Game Projects/UnityTogether/Assets/Processors/FileSync.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.editorcoroutines@1.0.0/Editor/EditorCoroutine.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.editorcoroutines@1.0.0/Editor/EditorCoroutineUtility.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.properties@2.1.0-exp.2/Runtime/PropertyVisitors/PropertyVisitor.cs" root0="SKIP_HIGHLIGHTING" />
@@ -166,7 +150,7 @@
       <workItem from="1688748120640" duration="84000" />
       <workItem from="1689365432199" duration="19837000" />
       <workItem from="1689417559686" duration="11188000" />
-      <workItem from="1689538786957" duration="217000" />
+      <workItem from="1689538786957" duration="8215000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1675826684288</created>
@@ -189,7 +173,14 @@
       <option name="project" value="LOCAL" />
       <updated>1685697544798</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Added new Packages">
+      <created>1689539079816</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1689539079816</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -215,25 +206,7 @@
     <MESSAGE value="Initial Commit" />
     <MESSAGE value="Fixed File Operation" />
     <MESSAGE value="Fixed File Sync Error" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed File Sync Error" />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" type="DotNet Breakpoints">
-          <url>file://$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs</url>
-          <line>73</line>
-          <properties documentPath="D:\CodingProjects\Game Projects\UnityTogether\Assets\Processors\GameObjectSync.cs" initialLine="61" containingFunctionPresentation="method 'OnMessageReceived'">
-            <startOffsets>
-              <option value="3321" />
-            </startOffsets>
-            <endOffsets>
-              <option value="3386" />
-            </endOffsets>
-          </properties>
-          <option name="timeStamp" value="1" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Added new Packages" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added new Packages" />
   </component>
 </project>

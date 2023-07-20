@@ -41,29 +41,6 @@ public class FileSync : Processor
         });
     }
 
-    protected override void OnMessageReceived(int index, string msg, string userID)
-    {
-        if (Package.IsPackageIndex(typeof(FileDeletedPackage), index))
-        {
-            FileDeletedPackage package = new FileDeletedPackage(msg);
-            PerformSafeFileOperation(() => 
-            {
-                if (File.Exists(dataPath + package.path))
-                    File.Delete(dataPath + package.path);
-            });
-        }
-
-        if (Package.IsPackageIndex(typeof(FileRenamedPackage), index))
-        {
-            FileRenamedPackage package = new FileRenamedPackage(msg);
-            PerformSafeFileOperation(() => 
-            {
-                if (File.Exists(dataPath + package.oldPath))
-                    File.Move(dataPath + package.oldPath, dataPath + package.newPath);
-            });
-        }
-    }
-
     private void OnFileChanged(object sender, FileSystemEventArgs e)
     {
         string relativePath = GetRelativePath(e.FullPath);
@@ -83,10 +60,7 @@ public class FileSync : Processor
     private void OnFileDeleted(object sender, FileSystemEventArgs e)
     {
         Debug.Log("File deleted: " + GetRelativePath(e.FullPath));
-        communication.SendPackage(new FileDeletedPackage()
-        {
-            path = GetRelativePath(e.FullPath)
-        });
+        communication.SendPackage(new FileDeletedPackage() { path = GetRelativePath(e.FullPath) });
         AssetDatabase.ImportAsset(GetRelativePath(e.FullPath));
     }
     
@@ -101,7 +75,7 @@ public class FileSync : Processor
         AssetDatabase.MoveAsset(GetRelativePath(e.OldFullPath), GetRelativePath(e.FullPath));
     }
     
-    private void PerformSafeFileOperation(Action action)
+    public void PerformSafeFileOperation(Action action)
     {
         watcher.EnableRaisingEvents = false;
         try

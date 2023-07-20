@@ -79,6 +79,18 @@ public class UnityTogetherClient : MonoBehaviour
         {
             Debug.Log("Received message: " + package);
             OnMessageReceived?.Invoke(packageID, package, username);
+            Enqueue(() =>
+            {
+                try
+                {
+                    Type packageType = Package.GetPackageType(packageID);
+                    Package p = (Package) Activator.CreateInstance(packageType, package);
+                    p.Execute();
+                } catch (Exception e)
+                {
+                    Debug.LogError(e);
+                }
+            });
         });
 
         connection.On<string, string, string>("ReceiveFile", (username, filePath, fileData) =>

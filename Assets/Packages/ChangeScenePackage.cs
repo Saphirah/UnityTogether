@@ -1,4 +1,5 @@
 using System;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public class ChangeScenePackage : Package
@@ -7,4 +8,9 @@ public class ChangeScenePackage : Package
     public ChangeScenePackage(string json) => Deserialize(json);
 
     public string SceneName;
+    public override void Execute()
+    {
+        EditorSceneManager.SaveOpenScenes();
+        EditorSceneManager.OpenScene(SceneName);
+    }
 }

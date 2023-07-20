@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class GameObjectCreatePackage : Package
+public sealed class GameObjectCreatePackage : Package
 {
     public GameObjectCreatePackage(){}
     public GameObjectCreatePackage(string json) => Deserialize(json);
@@ -10,4 +10,9 @@ public class GameObjectCreatePackage : Package
     public string GameObjectName;
     
     public GameObject NewParent => GameObject.Find(GameObjectHierarchy);
+    
+    public override void Execute()
+    {
+        GameObject newGameObject = new GameObject(GameObjectName) { transform = { parent = NewParent.transform } };
+    }
 }

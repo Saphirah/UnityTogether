@@ -16,18 +16,16 @@ public class CameraDrawer : Processor
         com.OnRender += Update;
     }
     
-    private Dictionary<string, PositionRotation> clients = new();
-    private Dictionary<string, PositionRotation> currentTransform = new();
+    private static Dictionary<string, PositionRotation> clients = new();
+    private static Dictionary<string, PositionRotation> currentTransform = new();
 
-    protected override void OnMessageReceived(int index, string msg, string userID)
+    public static void UpdateTransform(string username, PositionRotation transform)
     {
-        if (index != 0) return;
-        CameraTransformPackage package = new CameraTransformPackage(msg);
-        clients[userID] = package.positionRotation;
-        if(!currentTransform.ContainsKey(userID))
-            currentTransform.Add(userID, new PositionRotation());
+        clients[username] = transform;
+        if(!currentTransform.ContainsKey(username))
+            currentTransform.Add(username, new PositionRotation());
     }
-    
+
     public void Update()
     {
         if (cameraTransformPackage.position == SceneView.lastActiveSceneView.camera.transform.position && cameraTransformPackage.rotation == SceneView.lastActiveSceneView.camera.transform.rotation) return;

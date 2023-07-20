@@ -11,4 +11,6 @@ public class GameObjectChangeParentPackage : Package
     
     public GameObject GameObject => GameObject.Find(GameObjectHierarchy);
     public GameObject NewParent => GameObject.Find(NewParentHierarchy);
+    
+    public override void Execute() => GameObject.transform.SetParent(NewParent?.transform);
 }

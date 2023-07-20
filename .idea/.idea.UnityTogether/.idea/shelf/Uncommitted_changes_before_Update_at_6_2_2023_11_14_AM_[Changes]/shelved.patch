@@ -1,0 +1,1840 @@
+Index: Assets/Processors/CameraDrawer.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Collections.Generic;\r\nusing UnityEditor;\r\nusing UnityEngine;\r\n\r\npublic class CameraDrawer : Processor\r\n{\r\n    private Mesh mesh;\r\n    private Material material;\r\n    private CameraTransformPackage cameraTransformPackage = new();\r\n    \r\n    public CameraDrawer(Client com) : base(com)\r\n    {\r\n        mesh = Resources.Load<Mesh>(\"CameraMesh\");\r\n        material = Resources.Load<Material>(\"CameraMaterial\");\r\n        com.OnRender += Render;\r\n        com.OnUpdate += Update;\r\n    }\r\n    \r\n    private Dictionary<string, PositionRotation> clients = new();\r\n    private Dictionary<string, PositionRotation> currentTransform = new();\r\n\r\n    protected override void OnMessageReceived(int index, string msg, string userID)\r\n    {\r\n        if (index != 0) return;\r\n        CameraTransformPackage package = new CameraTransformPackage(msg);\r\n        clients[userID] = package.positionRotation;\r\n        if(!currentTransform.ContainsKey(userID))\r\n            currentTransform.Add(userID, new PositionRotation());\r\n    }\r\n    \r\n    public void Update()\r\n    {\r\n        if (cameraTransformPackage.position == SceneView.lastActiveSceneView.camera.transform.position && cameraTransformPackage.rotation == SceneView.lastActiveSceneView.camera.transform.rotation) return;\r\n        cameraTransformPackage = new CameraTransformPackage\r\n        {\r\n            position = SceneView.lastActiveSceneView.camera.transform.position,\r\n            rotation = SceneView.lastActiveSceneView.camera.transform.rotation\r\n        };\r\n        communication.SendPackage(cameraTransformPackage);\r\n    }\r\n    \r\n    public void Render()\r\n    {\r\n        foreach (string client in clients.Keys)\r\n        {\r\n            if(communication.Username == client) continue;\r\n            //Interpolation\r\n            PositionRotation positionRotation = currentTransform[client];\r\n            positionRotation.position = Vector3.Lerp(positionRotation.position, clients[client].position, Mathf.Clamp01(Time.deltaTime * 10));\r\n            positionRotation.rotation = Quaternion.Lerp(positionRotation.rotation, clients[client].rotation, Mathf.Clamp01(Time.deltaTime * 10));\r\n            currentTransform[client] = positionRotation;\r\n            \r\n            Gizmos.DrawMesh(mesh, 0, positionRotation.position, positionRotation.rotation, Vector3.one);\r\n            Gizmos.DrawRay(positionRotation.position, positionRotation.rotation * Vector3.forward * 50);\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Processors/CameraDrawer.cs b/Assets/Processors/CameraDrawer.cs
+--- a/Assets/Processors/CameraDrawer.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Processors/CameraDrawer.cs	(date 1685503525539)
+@@ -8,12 +8,12 @@
+     private Material material;
+     private CameraTransformPackage cameraTransformPackage = new();
+     
+-    public CameraDrawer(Client com) : base(com)
++    public CameraDrawer(UnityTogetherClient com) : base(com)
+     {
+         mesh = Resources.Load<Mesh>("CameraMesh");
+         material = Resources.Load<Material>("CameraMaterial");
+         com.OnRender += Render;
+-        com.OnUpdate += Update;
++        com.OnRender += Update;
+     }
+     
+     private Dictionary<string, PositionRotation> clients = new();
+@@ -31,12 +31,14 @@
+     public void Update()
+     {
+         if (cameraTransformPackage.position == SceneView.lastActiveSceneView.camera.transform.position && cameraTransformPackage.rotation == SceneView.lastActiveSceneView.camera.transform.rotation) return;
++        Transform transform = SceneView.lastActiveSceneView.camera.transform;
+         cameraTransformPackage = new CameraTransformPackage
+         {
+-            position = SceneView.lastActiveSceneView.camera.transform.position,
+-            rotation = SceneView.lastActiveSceneView.camera.transform.rotation
++            position = transform.position,
++            rotation = transform.rotation
+         };
+         communication.SendPackage(cameraTransformPackage);
++        Debug.Log("Sent camera transform");
+     }
+     
+     public void Render()
+Index: Assets/Processor.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>public abstract class Processor\r\n{\r\n    protected Communication communication;\r\n    \r\n    public Processor(Communication com)\r\n    {\r\n        communication = com;\r\n        communication.OnMessageReceived += OnMessageReceived;\r\n    }\r\n    \r\n    protected abstract void OnMessageReceived(int index, string msg, string userID);\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Processor.cs b/Assets/Processor.cs
+--- a/Assets/Processor.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Processor.cs	(date 1685551568370)
+@@ -1,11 +1,25 @@
++using System;
++using UnityEngine;
++
+ public abstract class Processor
+ {
+-    protected Communication communication;
+-    
+-    public Processor(Communication com)
++    protected readonly UnityTogetherClient communication;
++
++    protected Processor(UnityTogetherClient com)
+     {
+         communication = com;
+-        communication.OnMessageReceived += OnMessageReceived;
++        communication.OnMessageReceived += MessageReceived;
++    }
++    
++    private void MessageReceived(int index, string msg, string userID)
++    {
++        try
++        {
++            OnMessageReceived(index, msg, userID);
++        } catch (Exception e)
++        {
++            Debug.LogError(e);
++        }
+     }
+     
+     protected abstract void OnMessageReceived(int index, string msg, string userID);
+Index: Assets/Processors/GameObjectSync.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Collections.Generic;\r\nusing System.Linq;\r\nusing System.Net.Sockets;\r\nusing Unity.Serialization.Json;\r\nusing UnityEditor;\r\nusing UnityEngine;\r\n\r\npublic class GameObjectSync : Processor\r\n{\r\n    private GameObject[] selectedGameObjects = new GameObject[0];\r\n    private List<Dictionary<KeyValuePair<Component, string>, object>> gameObjectProperties = new();\r\n\r\n    public GameObjectSync(Client com) : base(com)\r\n    {\r\n        com.OnUpdate += Update;\r\n    }\r\n\r\n    protected override void OnMessageReceived(int index, string msg, string userID)\r\n    {\r\n        switch (index)\r\n        {\r\n            case 1:\r\n                //Debug.Log(msg);\r\n                GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);\r\n                GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);\r\n                if (gameObject == null) return;\r\n                //Debug.Log(\"Gameobject found\");\r\n                Component component = gameObject.GetComponents<Component>().ToList()\r\n                    .Find(c => c.GetType().Name == serializationPackage.ComponentName);\r\n                if (component == null) return;\r\n                //Debug.Log(\"Component found \" + component.GetType().Name);\r\n                Type type = component.GetType();\r\n                SerializedObject serializedObject = new SerializedObject(component);\r\n                SerializedProperty iterator = serializedObject.GetIterator();\r\n                iterator.Next(true);\r\n                while (iterator.NextVisible(false))\r\n                {\r\n                    if (iterator.name == serializationPackage.VariableName)\r\n                    {\r\n                        //Debug.Log(\"Property found \" + iterator.name);\r\n                        //Debug.Log(\"Value \" + serializationPackage.Value);\r\n                        SetSerializedPropertyValue(iterator, serializationPackage.Value);\r\n                        serializedObject.ApplyModifiedProperties();\r\n                        break;\r\n                    }\r\n                }\r\n                break;  \r\n            case 2:\r\n                if(Communication.Instance.Username == userID) return;\r\n                GameObjectChangeParentPackage changeParentPackage = new GameObjectChangeParentPackage(msg);\r\n                changeParentPackage.GameObject.transform.SetParent(changeParentPackage.NewParent?.transform);\r\n                break;\r\n            case 3:\r\n                if(Communication.Instance.Username == userID) return;\r\n                GameObjectCreatePackage createPackage = new GameObjectCreatePackage(msg);\r\n                GameObject newGameObject = JsonSerialization.FromJson<GameObject>(msg);\r\n                newGameObject.transform.parent = createPackage.NewParent.transform;\r\n                break;\r\n            case 4:\r\n                if(Communication.Instance.Username == userID) return;\r\n                GameObjectDestroyPackage destroyPackage = new GameObjectDestroyPackage(msg);\r\n                GameObject.DestroyImmediate(destroyPackage.GameObject);\r\n                break;\r\n        }\r\n    }\r\n\r\n    private void Update()\r\n    {\r\n        if (!Selection.gameObjects.Any()) return;\r\n        \r\n        //Reset Selection\r\n        if (!Selection.gameObjects.ToHashSet().SetEquals(selectedGameObjects))\r\n        {\r\n            selectedGameObjects = Selection.gameObjects;\r\n            gameObjectProperties.Clear();\r\n            for (int i = 0; i < selectedGameObjects.Length; i++)\r\n            {\r\n                Component[] components = selectedGameObjects[i].GetComponents<Component>();\r\n\r\n                gameObjectProperties.Add(new Dictionary<KeyValuePair<Component, string>, object>());\r\n\r\n                foreach (Component component in components)\r\n                {\r\n                    if (component == null) continue;\r\n                    SerializedObject serializedObject = new SerializedObject(component);\r\n                    SerializedProperty iterator = serializedObject.GetIterator();\r\n                    while (iterator.NextVisible(true))\r\n                    {\r\n                        object value = GetSerializedPropertyValue(iterator);\r\n                        if (value == null) continue;\r\n                        gameObjectProperties[i].TryAdd(new KeyValuePair<Component, string>(component, iterator.name),\r\n                            GetSerializedPropertyValue(iterator));\r\n                    }\r\n                }\r\n            }\r\n\r\n            //Debug.Log(\"New Selection\");\r\n        }\r\n\r\n        for (var index = 0; index < selectedGameObjects.Length; index++)\r\n        {\r\n            //Sync Property change\r\n            Component[] components = selectedGameObjects[index].GetComponents<Component>();\r\n\r\n            foreach (Component component in components)\r\n            {\r\n                if (component == null) continue;\r\n                SerializedObject serializedObject = new SerializedObject(component);\r\n                SerializedProperty iterator = serializedObject.GetIterator();\r\n                iterator.NextVisible(true);\r\n                do\r\n                {\r\n                    object value = GetSerializedPropertyValue(iterator);\r\n                    var key = new KeyValuePair<Component, string>(component, iterator.name);\r\n                    if (value == null || !gameObjectProperties[index].ContainsKey(key) ||\r\n                        gameObjectProperties[index][key].ToString() == value.ToString()) continue;\r\n                    //Debug.Log(\"Updating Value of \" + iterator.name + \" to \" + value + \" was \" + gameObjectProperties[index][new KeyValuePair<Component, string>(component, iterator.name)] + \" on \" + component.GetType().Name);\r\n                    communication.SendPackage(new GameObjectSerializationPackage()\r\n                    {\r\n                        ComponentName = component.GetType().Name,\r\n                        GameObjectHierarchy = GetPath(component.transform),\r\n                        Value = value.ToString(),\r\n                        VariableName = iterator.name\r\n                    });\r\n                    gameObjectProperties[index][new KeyValuePair<Component, string>(component, iterator.name)] = value;\r\n                } while (iterator.NextVisible(false));\r\n            }\r\n        }\r\n    }\r\n\r\n    public static string GetPath(Transform current)\r\n    {\r\n        if (current.parent == null)\r\n            return \"/\" + current.name;\r\n        return GetPath(current.parent) + \"/\" + current.name;\r\n    }\r\n\r\n    private object GetSerializedPropertyValue(SerializedProperty iterator)\r\n    {\r\n        try\r\n        {\r\n            return iterator.propertyType switch\r\n            {\r\n                SerializedPropertyType.Vector3 => iterator.vector3Value,\r\n                SerializedPropertyType.Quaternion => iterator.quaternionValue,\r\n                SerializedPropertyType.Float => iterator.floatValue,\r\n                SerializedPropertyType.Integer => iterator.intValue,\r\n                SerializedPropertyType.Boolean => iterator.boolValue,\r\n                SerializedPropertyType.String => iterator.stringValue,\r\n                SerializedPropertyType.ObjectReference => iterator.objectReferenceInstanceIDValue,\r\n                SerializedPropertyType.Enum => iterator.enumValueIndex,\r\n                SerializedPropertyType.Color => iterator.colorValue,\r\n                SerializedPropertyType.LayerMask => iterator.intValue,\r\n                SerializedPropertyType.Vector2 => iterator.vector2Value,\r\n                SerializedPropertyType.Vector4 => iterator.vector4Value,\r\n                SerializedPropertyType.Rect => iterator.rectValue,\r\n                SerializedPropertyType.ArraySize => iterator.intValue,\r\n                SerializedPropertyType.Character => iterator.intValue,\r\n                SerializedPropertyType.AnimationCurve => iterator.animationCurveValue,\r\n                SerializedPropertyType.Bounds => iterator.boundsValue,\r\n                SerializedPropertyType.Gradient => null,\r\n                SerializedPropertyType.ExposedReference => iterator.exposedReferenceValue,\r\n                SerializedPropertyType.FixedBufferSize => iterator.intValue,\r\n                SerializedPropertyType.Vector2Int => iterator.vector2IntValue,\r\n                SerializedPropertyType.Vector3Int => iterator.vector3IntValue,\r\n                SerializedPropertyType.RectInt => iterator.rectIntValue,\r\n                SerializedPropertyType.BoundsInt => iterator.boundsIntValue,\r\n                SerializedPropertyType.ManagedReference => iterator.managedReferenceValue,\r\n                SerializedPropertyType.Hash128 => iterator.hash128Value,\r\n                _ => null\r\n            };\r\n        }\r\n        catch (Exception e)\r\n        {\r\n            return null;\r\n        }\r\n    }\r\n\r\n    //Now do the GetSerializedPropertyValue but with set\r\n    private void SetSerializedPropertyValue(SerializedProperty iterator, string value)\r\n    {\r\n        switch (iterator.propertyType)\r\n        {\r\n            case SerializedPropertyType.Vector3:\r\n                iterator.vector3Value = StringToVector3(value);\r\n                break;\r\n            case SerializedPropertyType.Quaternion:\r\n                iterator.quaternionValue = StringToQuaternion(value);\r\n                break;\r\n            case SerializedPropertyType.Float:\r\n                iterator.floatValue = float.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.Integer:\r\n                iterator.intValue = int.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.Boolean:\r\n                iterator.boolValue = Convert.ToBoolean(value);\r\n                break;\r\n            case SerializedPropertyType.String:\r\n                iterator.stringValue = value;\r\n                break;\r\n            case SerializedPropertyType.ObjectReference:\r\n                //iterator.objectReferenceValue = (UnityEngine.Object) value;\r\n                break;\r\n            case SerializedPropertyType.Enum:\r\n                iterator.enumValueIndex = int.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.Color:\r\n                iterator.colorValue = StringToColor(value);\r\n                break;\r\n            case SerializedPropertyType.Generic:\r\n                //iterator.objectReferenceValue = (UnityEngine.Object) value;\r\n                break;\r\n            case SerializedPropertyType.LayerMask:\r\n                iterator.intValue = int.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.Vector2:\r\n                iterator.vector2Value = StringToVector2(value);\r\n                break;\r\n            case SerializedPropertyType.Vector4:\r\n                iterator.vector4Value = StringToVector4(value);\r\n                break;\r\n            case SerializedPropertyType.Rect:\r\n                //iterator.rectValue = (Rect) value;\r\n                break;\r\n            case SerializedPropertyType.ArraySize:\r\n                iterator.intValue = int.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.Character:\r\n                iterator.intValue = int.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.AnimationCurve:\r\n                //iterator.animationCurveValue = (AnimationCurve) value;\r\n                break;\r\n            case SerializedPropertyType.Bounds:\r\n                //iterator.boundsValue = (Bounds) value;\r\n                break;\r\n            case SerializedPropertyType.Gradient:\r\n                //iterator.objectReferenceValue = (UnityEngine.Object) value;\r\n                break;\r\n            case SerializedPropertyType.ExposedReference:\r\n                //iterator.exposedReferenceValue = (UnityEngine.Object) value;\r\n                break;\r\n            case SerializedPropertyType.FixedBufferSize:\r\n                iterator.intValue = int.Parse(value);\r\n                break;\r\n            case SerializedPropertyType.Vector2Int:\r\n                iterator.vector2IntValue = StringToVector2Int(value);\r\n                break;\r\n            case SerializedPropertyType.Vector3Int:\r\n                iterator.vector3IntValue = StringToVector3Int(value);\r\n                break;\r\n            case SerializedPropertyType.RectInt:\r\n                //iterator.rectIntValue = (RectInt) value;\r\n                break;\r\n            case SerializedPropertyType.BoundsInt:\r\n                //iterator.boundsIntValue = (BoundsInt) value;\r\n                break;\r\n            case SerializedPropertyType.ManagedReference:\r\n                //iterator.managedReferenceValue = (UnityEngine.Object) value;\r\n                break;\r\n            case SerializedPropertyType.Hash128:\r\n                //iterator.hash128Value = (Hash128) value;\r\n                break;\r\n            default:\r\n                break;\r\n        }\r\n    }\r\n\r\n    public static Vector3 StringToVector3(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Vector3(\r\n            float.Parse(sArray[0]),\r\n            float.Parse(sArray[1]),\r\n            float.Parse(sArray[2]));\r\n    }\r\n    \r\n    public static Quaternion StringToQuaternion(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Quaternion(\r\n            float.Parse(sArray[0]),\r\n            float.Parse(sArray[1]),\r\n            float.Parse(sArray[2]),\r\n            float.Parse(sArray[3]));\r\n    }\r\n    \r\n    public static Vector2 StringToVector2(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Vector2(\r\n            float.Parse(sArray[0]),\r\n            float.Parse(sArray[1]));\r\n    }\r\n    \r\n    public static Vector4 StringToVector4(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Vector4(\r\n            float.Parse(sArray[0]),\r\n            float.Parse(sArray[1]),\r\n            float.Parse(sArray[2]),\r\n            float.Parse(sArray[3]));\r\n    }\r\n    \r\n    public static Color StringToColor(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Color(\r\n            float.Parse(sArray[0]),\r\n            float.Parse(sArray[1]),\r\n            float.Parse(sArray[2]),\r\n            float.Parse(sArray[3]));\r\n    }\r\n    \r\n    public static Vector2Int StringToVector2Int(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Vector2Int(\r\n            int.Parse(sArray[0]),\r\n            int.Parse(sArray[1]));\r\n    }\r\n    \r\n    public static Vector3Int StringToVector3Int(string sVector)\r\n    {\r\n        string[] sArray = sVector.Replace(\"(\", \"\").Replace(\")\",\"\").Split(',');\r\n        \r\n        return new Vector3Int(\r\n            int.Parse(sArray[0]),\r\n            int.Parse(sArray[1]),\r\n            int.Parse(sArray[2]));\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Processors/GameObjectSync.cs b/Assets/Processors/GameObjectSync.cs
+--- a/Assets/Processors/GameObjectSync.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Processors/GameObjectSync.cs	(date 1685554643347)
+@@ -8,12 +8,27 @@
+ 
+ public class GameObjectSync : Processor
+ {
+-    private GameObject[] selectedGameObjects = new GameObject[0];
+-    private List<Dictionary<KeyValuePair<Component, string>, object>> gameObjectProperties = new();
+-
+-    public GameObjectSync(Client com) : base(com)
++    public GameObjectSync(UnityTogetherClient com) : base(com)
++    {
++        Undo.postprocessModifications += OnPostprocessModifications;
++    }
++    
++    private UndoPropertyModification[] OnPostprocessModifications(UndoPropertyModification[] modifications)
+     {
+-        com.OnUpdate += Update;
++        Debug.Log(JsonSerialization.ToJson(modifications));
++        foreach (UndoPropertyModification modification in modifications)
++        {
++            if(modification.currentValue.target is Component component)
++                communication.SendPackage(new GameObjectSerializationPackage()
++                {
++                    ComponentName = component.GetType().Name,
++                    GameObjectHierarchy = GetPath(component.transform),
++                    Value = modification.currentValue.value,
++                    VariableName = modification.currentValue.propertyPath
++                });
++        }
++
++        return modifications;
+     }
+ 
+     protected override void OnMessageReceived(int index, string msg, string userID)
+@@ -21,30 +36,26 @@
+         switch (index)
+         {
+             case 1:
+-                //Debug.Log(msg);
+-                GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);
+-                GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);
+-                if (gameObject == null) return;
+-                //Debug.Log("Gameobject found");
+-                Component component = gameObject.GetComponents<Component>().ToList()
+-                    .Find(c => c.GetType().Name == serializationPackage.ComponentName);
+-                if (component == null) return;
+-                //Debug.Log("Component found " + component.GetType().Name);
+-                Type type = component.GetType();
+-                SerializedObject serializedObject = new SerializedObject(component);
+-                SerializedProperty iterator = serializedObject.GetIterator();
+-                iterator.Next(true);
+-                while (iterator.NextVisible(false))
+-                {
+-                    if (iterator.name == serializationPackage.VariableName)
++                UnityTogetherClient.Enqueue(() =>
++                {
++                    GameObjectSerializationPackage serializationPackage = new GameObjectSerializationPackage(msg);
++                    GameObject gameObject = GameObject.Find(serializationPackage.GameObjectHierarchy);
++                    if (gameObject == null) return;
++                    Component component = gameObject.GetComponents<Component>().ToList()
++                        .Find(c => c.GetType().Name == serializationPackage.ComponentName);
++                    if (component == null) return;
++                    SerializedObject serializedObject = new SerializedObject(component);
++                    SerializedProperty iterator = serializedObject.GetIterator();
++                    iterator.Next(true);
++                    while (iterator.NextVisible(true))
+                     {
+-                        //Debug.Log("Property found " + iterator.name);
+-                        //Debug.Log("Value " + serializationPackage.Value);
++                        string path = iterator.propertyPath;
++                        if (path != serializationPackage.VariableName) continue;
+                         SetSerializedPropertyValue(iterator, serializationPackage.Value);
+                         serializedObject.ApplyModifiedProperties();
+                         break;
+                     }
+-                }
++                });
+                 break;  
+             case 2:
+                 if(Communication.Instance.Username == userID) return;
+@@ -65,70 +76,6 @@
+         }
+     }
+ 
+-    private void Update()
+-    {
+-        if (!Selection.gameObjects.Any()) return;
+-        
+-        //Reset Selection
+-        if (!Selection.gameObjects.ToHashSet().SetEquals(selectedGameObjects))
+-        {
+-            selectedGameObjects = Selection.gameObjects;
+-            gameObjectProperties.Clear();
+-            for (int i = 0; i < selectedGameObjects.Length; i++)
+-            {
+-                Component[] components = selectedGameObjects[i].GetComponents<Component>();
+-
+-                gameObjectProperties.Add(new Dictionary<KeyValuePair<Component, string>, object>());
+-
+-                foreach (Component component in components)
+-                {
+-                    if (component == null) continue;
+-                    SerializedObject serializedObject = new SerializedObject(component);
+-                    SerializedProperty iterator = serializedObject.GetIterator();
+-                    while (iterator.NextVisible(true))
+-                    {
+-                        object value = GetSerializedPropertyValue(iterator);
+-                        if (value == null) continue;
+-                        gameObjectProperties[i].TryAdd(new KeyValuePair<Component, string>(component, iterator.name),
+-                            GetSerializedPropertyValue(iterator));
+-                    }
+-                }
+-            }
+-
+-            //Debug.Log("New Selection");
+-        }
+-
+-        for (var index = 0; index < selectedGameObjects.Length; index++)
+-        {
+-            //Sync Property change
+-            Component[] components = selectedGameObjects[index].GetComponents<Component>();
+-
+-            foreach (Component component in components)
+-            {
+-                if (component == null) continue;
+-                SerializedObject serializedObject = new SerializedObject(component);
+-                SerializedProperty iterator = serializedObject.GetIterator();
+-                iterator.NextVisible(true);
+-                do
+-                {
+-                    object value = GetSerializedPropertyValue(iterator);
+-                    var key = new KeyValuePair<Component, string>(component, iterator.name);
+-                    if (value == null || !gameObjectProperties[index].ContainsKey(key) ||
+-                        gameObjectProperties[index][key].ToString() == value.ToString()) continue;
+-                    //Debug.Log("Updating Value of " + iterator.name + " to " + value + " was " + gameObjectProperties[index][new KeyValuePair<Component, string>(component, iterator.name)] + " on " + component.GetType().Name);
+-                    communication.SendPackage(new GameObjectSerializationPackage()
+-                    {
+-                        ComponentName = component.GetType().Name,
+-                        GameObjectHierarchy = GetPath(component.transform),
+-                        Value = value.ToString(),
+-                        VariableName = iterator.name
+-                    });
+-                    gameObjectProperties[index][new KeyValuePair<Component, string>(component, iterator.name)] = value;
+-                } while (iterator.NextVisible(false));
+-            }
+-        }
+-    }
+-
+     public static string GetPath(Transform current)
+     {
+         if (current.parent == null)
+Index: Assets/Package.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Collections.Generic;\r\nusing UnityEngine;\r\n\r\npublic class Package\r\n{\r\n    public DateTime time = DateTime.Now;\r\n\r\n    public static List<Type> packages = new()\r\n    {\r\n        typeof(CameraTransformPackage), \r\n        typeof(GameObjectSerializationPackage),\r\n        typeof(GameObjectChangeParentPackage),\r\n        typeof(GameObjectCreatePackage),\r\n        typeof(GameObjectDestroyPackage)\r\n    };\r\n\r\n    public Package(){}\r\n    public Package(string json) => Deserialize(json);\r\n\r\n    public static int GetPackageIndex(Package package) => packages.IndexOf(package.GetType());\r\n    public override string ToString() => JsonUtility.ToJson(this);\r\n    protected virtual void Deserialize(string json) => JsonUtility.FromJsonOverwrite(json, this);\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Package.cs b/Assets/Package.cs
+--- a/Assets/Package.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Package.cs	(date 1685505462520)
+@@ -6,13 +6,15 @@
+ {
+     public DateTime time = DateTime.Now;
+ 
+-    public static List<Type> packages = new()
++    public static readonly List<Type> packages = new()
+     {
+         typeof(CameraTransformPackage), 
+         typeof(GameObjectSerializationPackage),
+         typeof(GameObjectChangeParentPackage),
+         typeof(GameObjectCreatePackage),
+-        typeof(GameObjectDestroyPackage)
++        typeof(GameObjectDestroyPackage),
++        typeof(FileDeletedPackage),
++        typeof(FileRenamedPackage),
+     };
+ 
+     public Package(){}
+@@ -21,4 +23,6 @@
+     public static int GetPackageIndex(Package package) => packages.IndexOf(package.GetType());
+     public override string ToString() => JsonUtility.ToJson(this);
+     protected virtual void Deserialize(string json) => JsonUtility.FromJsonOverwrite(json, this);
++    
++    public static bool IsPackageIndex(Type type, int index) => packages.IndexOf(type) == index;
+ }
+Index: UnityTogetherServer/net6.0/UnityTogetherServer.deps.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\r\n  \"runtimeTarget\": {\r\n    \"name\": \".NETCoreApp,Version=v6.0\",\r\n    \"signature\": \"\"\r\n  },\r\n  \"compilationOptions\": {},\r\n  \"targets\": {\r\n    \".NETCoreApp,Version=v6.0\": {\r\n      \"UnityTogetherServer/1.0.0\": {\r\n        \"runtime\": {\r\n          \"UnityTogetherServer.dll\": {}\r\n        }\r\n      }\r\n    }\r\n  },\r\n  \"libraries\": {\r\n    \"UnityTogetherServer/1.0.0\": {\r\n      \"type\": \"project\",\r\n      \"serviceable\": false,\r\n      \"sha512\": \"\"\r\n    }\r\n  }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer/net6.0/UnityTogetherServer.deps.json b/UnityTogetherServer/net6.0/UnityTogetherServer.deps.json
+--- a/UnityTogetherServer/net6.0/UnityTogetherServer.deps.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer/net6.0/UnityTogetherServer.deps.json	(date 1685506922546)
+@@ -7,9 +7,287 @@
+   "targets": {
+     ".NETCoreApp,Version=v6.0": {
+       "UnityTogetherServer/1.0.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.SignalR": "1.1.0"
++        },
+         "runtime": {
+           "UnityTogetherServer.dll": {}
+         }
++      },
++      "Microsoft.AspNetCore.Authentication.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Options": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Authorization/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Options": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Authorization.Policy/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Authentication.Abstractions": "2.2.0",
++          "Microsoft.AspNetCore.Authorization": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Connections.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Features": "2.2.0",
++          "System.IO.Pipelines": "4.5.2"
++        }
++      },
++      "Microsoft.AspNetCore.Hosting.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Hosting.Server.Abstractions": "2.2.0",
++          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Hosting.Abstractions": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Hosting.Server.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Features": "2.2.0",
++          "Microsoft.Extensions.Configuration.Abstractions": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Http/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
++          "Microsoft.AspNetCore.WebUtilities": "2.2.0",
++          "Microsoft.Extensions.ObjectPool": "2.2.0",
++          "Microsoft.Extensions.Options": "2.2.0",
++          "Microsoft.Net.Http.Headers": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Http.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Features": "2.2.0",
++          "System.Text.Encodings.Web": "4.5.0"
++        }
++      },
++      "Microsoft.AspNetCore.Http.Connections/1.1.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Authorization.Policy": "2.2.0",
++          "Microsoft.AspNetCore.Hosting.Abstractions": "2.2.0",
++          "Microsoft.AspNetCore.Http": "2.2.0",
++          "Microsoft.AspNetCore.Http.Connections.Common": "1.1.0",
++          "Microsoft.AspNetCore.Routing": "2.2.0",
++          "Microsoft.AspNetCore.WebSockets": "2.2.0",
++          "Newtonsoft.Json": "11.0.2",
++          "System.Security.Principal.Windows": "4.5.0"
++        }
++      },
++      "Microsoft.AspNetCore.Http.Connections.Common/1.1.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Connections.Abstractions": "2.2.0",
++          "Newtonsoft.Json": "11.0.2",
++          "System.Buffers": "4.5.0"
++        }
++      },
++      "Microsoft.AspNetCore.Http.Extensions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
++          "Microsoft.Extensions.FileProviders.Abstractions": "2.2.0",
++          "Microsoft.Net.Http.Headers": "2.2.0",
++          "System.Buffers": "4.5.0"
++        }
++      },
++      "Microsoft.AspNetCore.Http.Features/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.Primitives": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Routing/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Extensions": "2.2.0",
++          "Microsoft.AspNetCore.Routing.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
++          "Microsoft.Extensions.ObjectPool": "2.2.0",
++          "Microsoft.Extensions.Options": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.Routing.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Abstractions": "2.2.0"
++        }
++      },
++      "Microsoft.AspNetCore.SignalR/1.1.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Connections": "1.1.0",
++          "Microsoft.AspNetCore.SignalR.Core": "1.1.0"
++        }
++      },
++      "Microsoft.AspNetCore.SignalR.Common/1.1.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Connections.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Options": "2.2.0",
++          "Newtonsoft.Json": "11.0.2",
++          "System.Buffers": "4.5.0"
++        }
++      },
++      "Microsoft.AspNetCore.SignalR.Core/1.1.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Authorization": "2.2.0",
++          "Microsoft.AspNetCore.SignalR.Common": "1.1.0",
++          "Microsoft.AspNetCore.SignalR.Protocols.Json": "1.1.0",
++          "Microsoft.Extensions.DependencyInjection.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
++          "System.Reflection.Emit": "4.3.0",
++          "System.Threading.Channels": "4.5.0"
++        }
++      },
++      "Microsoft.AspNetCore.SignalR.Protocols.Json/1.1.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.SignalR.Common": "1.1.0",
++          "Newtonsoft.Json": "11.0.2"
++        }
++      },
++      "Microsoft.AspNetCore.WebSockets/2.2.0": {
++        "dependencies": {
++          "Microsoft.AspNetCore.Http.Extensions": "2.2.0",
++          "Microsoft.Extensions.Logging.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Options": "2.2.0",
++          "System.Net.WebSockets.WebSocketProtocol": "4.5.1"
++        }
++      },
++      "Microsoft.AspNetCore.WebUtilities/2.2.0": {
++        "dependencies": {
++          "Microsoft.Net.Http.Headers": "2.2.0",
++          "System.Text.Encodings.Web": "4.5.0"
++        }
++      },
++      "Microsoft.Extensions.Configuration.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.Primitives": "2.2.0"
++        }
++      },
++      "Microsoft.Extensions.DependencyInjection.Abstractions/2.2.0": {},
++      "Microsoft.Extensions.FileProviders.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.Primitives": "2.2.0"
++        }
++      },
++      "Microsoft.Extensions.Hosting.Abstractions/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.Configuration.Abstractions": "2.2.0",
++          "Microsoft.Extensions.DependencyInjection.Abstractions": "2.2.0",
++          "Microsoft.Extensions.FileProviders.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Logging.Abstractions": "2.2.0"
++        }
++      },
++      "Microsoft.Extensions.Logging.Abstractions/2.2.0": {},
++      "Microsoft.Extensions.ObjectPool/2.2.0": {},
++      "Microsoft.Extensions.Options/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.DependencyInjection.Abstractions": "2.2.0",
++          "Microsoft.Extensions.Primitives": "2.2.0",
++          "System.ComponentModel.Annotations": "4.5.0"
++        }
++      },
++      "Microsoft.Extensions.Primitives/2.2.0": {
++        "dependencies": {
++          "System.Memory": "4.5.1",
++          "System.Runtime.CompilerServices.Unsafe": "4.5.1"
++        }
++      },
++      "Microsoft.Net.Http.Headers/2.2.0": {
++        "dependencies": {
++          "Microsoft.Extensions.Primitives": "2.2.0",
++          "System.Buffers": "4.5.0"
++        }
++      },
++      "Microsoft.NETCore.Platforms/2.0.0": {},
++      "Microsoft.NETCore.Targets/1.1.0": {},
++      "Newtonsoft.Json/11.0.2": {
++        "runtime": {
++          "lib/netstandard2.0/Newtonsoft.Json.dll": {
++            "assemblyVersion": "11.0.0.0",
++            "fileVersion": "11.0.2.21924"
++          }
++        }
++      },
++      "System.Buffers/4.5.0": {},
++      "System.ComponentModel.Annotations/4.5.0": {},
++      "System.IO/4.3.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0",
++          "Microsoft.NETCore.Targets": "1.1.0",
++          "System.Runtime": "4.3.0",
++          "System.Text.Encoding": "4.3.0",
++          "System.Threading.Tasks": "4.3.0"
++        }
++      },
++      "System.IO.Pipelines/4.5.2": {},
++      "System.Memory/4.5.1": {},
++      "System.Net.WebSockets.WebSocketProtocol/4.5.1": {
++        "runtime": {
++          "lib/netcoreapp2.1/System.Net.WebSockets.WebSocketProtocol.dll": {
++            "assemblyVersion": "4.0.0.0",
++            "fileVersion": "4.6.26606.5"
++          }
++        }
++      },
++      "System.Reflection/4.3.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0",
++          "Microsoft.NETCore.Targets": "1.1.0",
++          "System.IO": "4.3.0",
++          "System.Reflection.Primitives": "4.3.0",
++          "System.Runtime": "4.3.0"
++        }
++      },
++      "System.Reflection.Emit/4.3.0": {
++        "dependencies": {
++          "System.IO": "4.3.0",
++          "System.Reflection": "4.3.0",
++          "System.Reflection.Emit.ILGeneration": "4.3.0",
++          "System.Reflection.Primitives": "4.3.0",
++          "System.Runtime": "4.3.0"
++        }
++      },
++      "System.Reflection.Emit.ILGeneration/4.3.0": {
++        "dependencies": {
++          "System.Reflection": "4.3.0",
++          "System.Reflection.Primitives": "4.3.0",
++          "System.Runtime": "4.3.0"
++        }
++      },
++      "System.Reflection.Primitives/4.3.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0",
++          "Microsoft.NETCore.Targets": "1.1.0",
++          "System.Runtime": "4.3.0"
++        }
++      },
++      "System.Runtime/4.3.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0",
++          "Microsoft.NETCore.Targets": "1.1.0"
++        }
++      },
++      "System.Runtime.CompilerServices.Unsafe/4.5.1": {},
++      "System.Security.Principal.Windows/4.5.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0"
++        }
++      },
++      "System.Text.Encoding/4.3.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0",
++          "Microsoft.NETCore.Targets": "1.1.0",
++          "System.Runtime": "4.3.0"
++        }
++      },
++      "System.Text.Encodings.Web/4.5.0": {},
++      "System.Threading.Channels/4.5.0": {},
++      "System.Threading.Tasks/4.3.0": {
++        "dependencies": {
++          "Microsoft.NETCore.Platforms": "2.0.0",
++          "Microsoft.NETCore.Targets": "1.1.0",
++          "System.Runtime": "4.3.0"
++        }
+       }
+     }
+   },
+@@ -18,6 +296,349 @@
+       "type": "project",
+       "serviceable": false,
+       "sha512": ""
++    },
++    "Microsoft.AspNetCore.Authentication.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-VloMLDJMf3n/9ic5lCBOa42IBYJgyB1JhzLsL68Zqg+2bEPWfGBj/xCJy/LrKTArN0coOcZp3wyVTZlx0y9pHQ==",
++      "path": "microsoft.aspnetcore.authentication.abstractions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.authentication.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Authorization/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-/L0W8H3jMYWyaeA9gBJqS/tSWBegP9aaTM0mjRhxTttBY9z4RVDRYJ2CwPAmAXIuPr3r1sOw+CS8jFVRGHRezQ==",
++      "path": "microsoft.aspnetcore.authorization/2.2.0",
++      "hashPath": "microsoft.aspnetcore.authorization.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Authorization.Policy/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-aJCo6niDRKuNg2uS2WMEmhJTooQUGARhV2ENQ2tO5443zVHUo19MSgrgGo9FIrfD+4yKPF8Q+FF33WkWfPbyKw==",
++      "path": "microsoft.aspnetcore.authorization.policy/2.2.0",
++      "hashPath": "microsoft.aspnetcore.authorization.policy.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Connections.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-Aqr/16Cu5XmGv7mLKJvXRxhhd05UJ7cTTSaUV4MZ3ynAzfgWjsAdpIU8FWuxwAjmVdmI8oOWuVDrbs+sRkhKnA==",
++      "path": "microsoft.aspnetcore.connections.abstractions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.connections.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Hosting.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-ubycklv+ZY7Kutdwuy1W4upWcZ6VFR8WUXU7l7B2+mvbDBBPAcfpi+E+Y5GFe+Q157YfA3C49D2GCjAZc7Mobw==",
++      "path": "microsoft.aspnetcore.hosting.abstractions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.hosting.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Hosting.Server.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-1PMijw8RMtuQF60SsD/JlKtVfvh4NORAhF4wjysdABhlhTrYmtgssqyncR0Stq5vqtjplZcj6kbT4LRTglt9IQ==",
++      "path": "microsoft.aspnetcore.hosting.server.abstractions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.hosting.server.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Http/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-YogBSMotWPAS/X5967pZ+yyWPQkThxhmzAwyCHCSSldzYBkW5W5d6oPfBaPqQOnSHYTpSOSOkpZoAce0vwb6+A==",
++      "path": "microsoft.aspnetcore.http/2.2.0",
++      "hashPath": "microsoft.aspnetcore.http.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Http.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-Nxs7Z1q3f1STfLYKJSVXCs1iBl+Ya6E8o4Oy1bCxJ/rNI44E/0f6tbsrVqAWfB7jlnJfyaAtIalBVxPKUPQb4Q==",
++      "path": "microsoft.aspnetcore.http.abstractions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.http.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Http.Connections/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-ZcwAM9rE5yjGC+vtiNAK0INybpKIqnvB+/rntZn2/CPtyiBAtovVrEp4UZOoC31zH5t0P78ix9gLNJzII/ODsA==",
++      "path": "microsoft.aspnetcore.http.connections/1.1.0",
++      "hashPath": "microsoft.aspnetcore.http.connections.1.1.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Http.Connections.Common/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-mYk5QUUjyXQmlyDHWDjkLYDArt97plwe6KsDsNVhDEQ+HgZMKGjISyM6YSA7BERQNR25kXBTbIYfSy1vePGQgg==",
++      "path": "microsoft.aspnetcore.http.connections.common/1.1.0",
++      "hashPath": "microsoft.aspnetcore.http.connections.common.1.1.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Http.Extensions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-2DgZ9rWrJtuR7RYiew01nGRzuQBDaGHGmK56Rk54vsLLsCdzuFUPqbDTJCS1qJQWTbmbIQ9wGIOjpxA1t0l7/w==",
++      "path": "microsoft.aspnetcore.http.extensions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.http.extensions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Http.Features/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-ziFz5zH8f33En4dX81LW84I6XrYXKf9jg6aM39cM+LffN9KJahViKZ61dGMSO2gd3e+qe5yBRwsesvyqlZaSMg==",
++      "path": "microsoft.aspnetcore.http.features/2.2.0",
++      "hashPath": "microsoft.aspnetcore.http.features.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Routing/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-jAhDBy0wryOnMhhZTtT9z63gJbvCzFuLm8yC6pHzuVu9ZD1dzg0ltxIwT4cfwuNkIL/TixdKsm3vpVOpG8euWQ==",
++      "path": "microsoft.aspnetcore.routing/2.2.0",
++      "hashPath": "microsoft.aspnetcore.routing.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.Routing.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-lRRaPN7jDlUCVCp9i0W+PB0trFaKB0bgMJD7hEJS9Uo4R9MXaMC8X2tJhPLmeVE3SGDdYI4QNKdVmhNvMJGgPQ==",
++      "path": "microsoft.aspnetcore.routing.abstractions/2.2.0",
++      "hashPath": "microsoft.aspnetcore.routing.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.SignalR/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-V5X5XkeAHaFyyBOGPrddVeqTNo6zRPJNS5PRhlzEyBXiNG9AtqUbMyWFdZahQyMiIWJau550z59A4kdC9g5I9A==",
++      "path": "microsoft.aspnetcore.signalr/1.1.0",
++      "hashPath": "microsoft.aspnetcore.signalr.1.1.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.SignalR.Common/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-TyLgQ4y4RVUIxiYFnHT181/rJ33/tL/NcBWC9BwLpulDt5/yGCG4EvsToZ49EBQ7256zj+R6OGw6JF+jj6MdPQ==",
++      "path": "microsoft.aspnetcore.signalr.common/1.1.0",
++      "hashPath": "microsoft.aspnetcore.signalr.common.1.1.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.SignalR.Core/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-mk69z50oFk2e89d3F/AfKeAvP3kvGG7MHG4ErydZiUd3ncSRq0kl0czq/COn/QVKYua9yGr2LIDwuR1C6/pu8Q==",
++      "path": "microsoft.aspnetcore.signalr.core/1.1.0",
++      "hashPath": "microsoft.aspnetcore.signalr.core.1.1.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.SignalR.Protocols.Json/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-BOsjatDJnvnnXCMajOlC0ISmiFnJi/EyJzMo0i//5fZJVCLrQ4fyV/HzrhhAhSJuwJOQDdDozKQ9MB9jHq84pg==",
++      "path": "microsoft.aspnetcore.signalr.protocols.json/1.1.0",
++      "hashPath": "microsoft.aspnetcore.signalr.protocols.json.1.1.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.WebSockets/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-ZpOcg2V0rCwU9ErfDb9y3Hcjoe7rU42XlmUS0mO4pVZQSgJVqR+DfyZtYd5LDa11F7bFNS2eezI9cBM3CmfGhw==",
++      "path": "microsoft.aspnetcore.websockets/2.2.0",
++      "hashPath": "microsoft.aspnetcore.websockets.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.AspNetCore.WebUtilities/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-9ErxAAKaDzxXASB/b5uLEkLgUWv1QbeVxyJYEHQwMaxXOeFFVkQxiq8RyfVcifLU7NR0QY0p3acqx4ZpYfhHDg==",
++      "path": "microsoft.aspnetcore.webutilities/2.2.0",
++      "hashPath": "microsoft.aspnetcore.webutilities.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.Configuration.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-65MrmXCziWaQFrI0UHkQbesrX5wTwf9XPjY5yFm/VkgJKFJ5gqvXRoXjIZcf2wLi5ZlwGz/oMYfyURVCWbM5iw==",
++      "path": "microsoft.extensions.configuration.abstractions/2.2.0",
++      "hashPath": "microsoft.extensions.configuration.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.DependencyInjection.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-f9hstgjVmr6rmrfGSpfsVOl2irKAgr1QjrSi3FgnS7kulxband50f2brRLwySAQTADPZeTdow0mpSMcoAdadCw==",
++      "path": "microsoft.extensions.dependencyinjection.abstractions/2.2.0",
++      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.FileProviders.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-EcnaSsPTqx2MGnHrmWOD0ugbuuqVT8iICqSqPzi45V5/MA1LjUNb0kwgcxBGqizV1R+WeBK7/Gw25Jzkyk9bIw==",
++      "path": "microsoft.extensions.fileproviders.abstractions/2.2.0",
++      "hashPath": "microsoft.extensions.fileproviders.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.Hosting.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-+k4AEn68HOJat5gj1TWa6X28WlirNQO9sPIIeQbia+91n03esEtMSSoekSTpMjUzjqtJWQN3McVx0GvSPFHF/Q==",
++      "path": "microsoft.extensions.hosting.abstractions/2.2.0",
++      "hashPath": "microsoft.extensions.hosting.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.Logging.Abstractions/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-B2WqEox8o+4KUOpL7rZPyh6qYjik8tHi2tN8Z9jZkHzED8ElYgZa/h6K+xliB435SqUcWT290Fr2aa8BtZjn8A==",
++      "path": "microsoft.extensions.logging.abstractions/2.2.0",
++      "hashPath": "microsoft.extensions.logging.abstractions.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.ObjectPool/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-gA8H7uQOnM5gb+L0uTNjViHYr+hRDqCdfugheGo/MxQnuHzmhhzCBTIPm19qL1z1Xe0NEMabfcOBGv9QghlZ8g==",
++      "path": "microsoft.extensions.objectpool/2.2.0",
++      "hashPath": "microsoft.extensions.objectpool.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.Options/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-UpZLNLBpIZ0GTebShui7xXYh6DmBHjWM8NxGxZbdQh/bPZ5e6YswqI+bru6BnEL5eWiOdodsXtEz3FROcgi/qg==",
++      "path": "microsoft.extensions.options/2.2.0",
++      "hashPath": "microsoft.extensions.options.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Extensions.Primitives/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-azyQtqbm4fSaDzZHD/J+V6oWMFaf2tWP4WEGIYePLCMw3+b2RQdj9ybgbQyjCshcitQKQ4lEDOZjmSlTTrHxUg==",
++      "path": "microsoft.extensions.primitives/2.2.0",
++      "hashPath": "microsoft.extensions.primitives.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.Net.Http.Headers/2.2.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-iZNkjYqlo8sIOI0bQfpsSoMTmB/kyvmV2h225ihyZT33aTp48ZpF6qYnXxzSXmHt8DpBAwBTX+1s1UFLbYfZKg==",
++      "path": "microsoft.net.http.headers/2.2.0",
++      "hashPath": "microsoft.net.http.headers.2.2.0.nupkg.sha512"
++    },
++    "Microsoft.NETCore.Platforms/2.0.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-VdLJOCXhZaEMY7Hm2GKiULmn7IEPFE4XC5LPSfBVCUIA8YLZVh846gtfBJalsPQF2PlzdD7ecX7DZEulJ402ZQ==",
++      "path": "microsoft.netcore.platforms/2.0.0",
++      "hashPath": "microsoft.netcore.platforms.2.0.0.nupkg.sha512"
++    },
++    "Microsoft.NETCore.Targets/1.1.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-aOZA3BWfz9RXjpzt0sRJJMjAscAUm3Hoa4UWAfceV9UTYxgwZ1lZt5nO2myFf+/jetYQo4uTP7zS8sJY67BBxg==",
++      "path": "microsoft.netcore.targets/1.1.0",
++      "hashPath": "microsoft.netcore.targets.1.1.0.nupkg.sha512"
++    },
++    "Newtonsoft.Json/11.0.2": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-IvJe1pj7JHEsP8B8J8DwlMEx8UInrs/x+9oVY+oCD13jpLu4JbJU2WCIsMRn5C4yW9+DgkaO8uiVE5VHKjpmdQ==",
++      "path": "newtonsoft.json/11.0.2",
++      "hashPath": "newtonsoft.json.11.0.2.nupkg.sha512"
++    },
++    "System.Buffers/4.5.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-pL2ChpaRRWI/p4LXyy4RgeWlYF2sgfj/pnVMvBqwNFr5cXg7CXNnWZWxrOONLg8VGdFB8oB+EG2Qw4MLgTOe+A==",
++      "path": "system.buffers/4.5.0",
++      "hashPath": "system.buffers.4.5.0.nupkg.sha512"
++    },
++    "System.ComponentModel.Annotations/4.5.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-UxYQ3FGUOtzJ7LfSdnYSFd7+oEv6M8NgUatatIN2HxNtDdlcvFAf+VIq4Of9cDMJEJC0aSRv/x898RYhB4Yppg==",
++      "path": "system.componentmodel.annotations/4.5.0",
++      "hashPath": "system.componentmodel.annotations.4.5.0.nupkg.sha512"
++    },
++    "System.IO/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-3qjaHvxQPDpSOYICjUoTsmoq5u6QJAFRUITgeT/4gqkF1bajbSmb1kwSxEA8AHlofqgcKJcM8udgieRNhaJ5Cg==",
++      "path": "system.io/4.3.0",
++      "hashPath": "system.io.4.3.0.nupkg.sha512"
++    },
++    "System.IO.Pipelines/4.5.2": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-NOC/SO4gSX6t0tB25xxDPqPEzkksuzW7NVFBTQGAkjXXUPQl7ZtyE83T7tUCP2huFBbPombfCKvq1Ox1aG8D9w==",
++      "path": "system.io.pipelines/4.5.2",
++      "hashPath": "system.io.pipelines.4.5.2.nupkg.sha512"
++    },
++    "System.Memory/4.5.1": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-sDJYJpGtTgx+23Ayu5euxG5mAXWdkDb4+b0rD0Cab0M1oQS9H0HXGPriKcqpXuiJDTV7fTp/d+fMDJmnr6sNvA==",
++      "path": "system.memory/4.5.1",
++      "hashPath": "system.memory.4.5.1.nupkg.sha512"
++    },
++    "System.Net.WebSockets.WebSocketProtocol/4.5.1": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-FquLjdb/0CeMqb15u9Px6TwnyFl306WztKWu6sKKc5kWPYMdpi5BFEkdxzGoieYFp9UksyGwJnCw4KKAUfJjrw==",
++      "path": "system.net.websockets.websocketprotocol/4.5.1",
++      "hashPath": "system.net.websockets.websocketprotocol.4.5.1.nupkg.sha512"
++    },
++    "System.Reflection/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-KMiAFoW7MfJGa9nDFNcfu+FpEdiHpWgTcS2HdMpDvt9saK3y/G4GwprPyzqjFH9NTaGPQeWNHU+iDlDILj96aQ==",
++      "path": "system.reflection/4.3.0",
++      "hashPath": "system.reflection.4.3.0.nupkg.sha512"
++    },
++    "System.Reflection.Emit/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-228FG0jLcIwTVJyz8CLFKueVqQK36ANazUManGaJHkO0icjiIypKW7YLWLIWahyIkdh5M7mV2dJepllLyA1SKg==",
++      "path": "system.reflection.emit/4.3.0",
++      "hashPath": "system.reflection.emit.4.3.0.nupkg.sha512"
++    },
++    "System.Reflection.Emit.ILGeneration/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-59tBslAk9733NXLrUJrwNZEzbMAcu8k344OYo+wfSVygcgZ9lgBdGIzH/nrg3LYhXceynyvTc8t5/GD4Ri0/ng==",
++      "path": "system.reflection.emit.ilgeneration/4.3.0",
++      "hashPath": "system.reflection.emit.ilgeneration.4.3.0.nupkg.sha512"
++    },
++    "System.Reflection.Primitives/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-5RXItQz5As4xN2/YUDxdpsEkMhvw3e6aNveFXUn4Hl/udNTCNhnKp8lT9fnc3MhvGKh1baak5CovpuQUXHAlIA==",
++      "path": "system.reflection.primitives/4.3.0",
++      "hashPath": "system.reflection.primitives.4.3.0.nupkg.sha512"
++    },
++    "System.Runtime/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-JufQi0vPQ0xGnAczR13AUFglDyVYt4Kqnz1AZaiKZ5+GICq0/1MH/mO/eAJHt/mHW1zjKBJd7kV26SrxddAhiw==",
++      "path": "system.runtime/4.3.0",
++      "hashPath": "system.runtime.4.3.0.nupkg.sha512"
++    },
++    "System.Runtime.CompilerServices.Unsafe/4.5.1": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-Zh8t8oqolRaFa9vmOZfdQm/qKejdqz0J9kr7o2Fu0vPeoH3BL1EOXipKWwkWtLT1JPzjByrF19fGuFlNbmPpiw==",
++      "path": "system.runtime.compilerservices.unsafe/4.5.1",
++      "hashPath": "system.runtime.compilerservices.unsafe.4.5.1.nupkg.sha512"
++    },
++    "System.Security.Principal.Windows/4.5.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-U77HfRXlZlOeIXd//Yoj6Jnk8AXlbeisf1oq1os+hxOGVnuG+lGSfGqTwTZBoORFF6j/0q7HXIl8cqwQ9aUGqQ==",
++      "path": "system.security.principal.windows/4.5.0",
++      "hashPath": "system.security.principal.windows.4.5.0.nupkg.sha512"
++    },
++    "System.Text.Encoding/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-BiIg+KWaSDOITze6jGQynxg64naAPtqGHBwDrLaCtixsa5bKiR8dpPOHA7ge3C0JJQizJE+sfkz1wV+BAKAYZw==",
++      "path": "system.text.encoding/4.3.0",
++      "hashPath": "system.text.encoding.4.3.0.nupkg.sha512"
++    },
++    "System.Text.Encodings.Web/4.5.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-Xg4G4Indi4dqP1iuAiMSwpiWS54ZghzR644OtsRCm/m/lBMG8dUBhLVN7hLm8NNrNTR+iGbshCPTwrvxZPlm4g==",
++      "path": "system.text.encodings.web/4.5.0",
++      "hashPath": "system.text.encodings.web.4.5.0.nupkg.sha512"
++    },
++    "System.Threading.Channels/4.5.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-MEH06N0rIGmRT4LOKQ2BmUO0IxfvmIY/PaouSq+DFQku72OL8cxfw8W99uGpTCFf2vx2QHLRSh374iSM3asdTA==",
++      "path": "system.threading.channels/4.5.0",
++      "hashPath": "system.threading.channels.4.5.0.nupkg.sha512"
++    },
++    "System.Threading.Tasks/4.3.0": {
++      "type": "package",
++      "serviceable": true,
++      "sha512": "sha512-LbSxKEdOUhVe8BezB/9uOGGppt+nZf6e1VFyw6v3DN6lqitm0OSn2uXMOdtP0M3W4iMcqcivm2J6UgqiwwnXiA==",
++      "path": "system.threading.tasks/4.3.0",
++      "hashPath": "system.threading.tasks.4.3.0.nupkg.sha512"
+     }
+   }
+ }
+\ No newline at end of file
+Index: Packages/manifest.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\r\n  \"dependencies\": {\r\n    \"com.unity.collab-proxy\": \"1.15.15\",\r\n    \"com.unity.feature.development\": \"1.0.1\",\r\n    \"com.unity.ide.rider\": \"3.0.13\",\r\n    \"com.unity.ide.visualstudio\": \"2.0.14\",\r\n    \"com.unity.ide.vscode\": \"1.2.5\",\r\n    \"com.unity.serialization\": \"2.1.1-exp.1\",\r\n    \"com.unity.test-framework\": \"1.1.31\",\r\n    \"com.unity.textmeshpro\": \"3.0.6\",\r\n    \"com.unity.timeline\": \"1.6.4\",\r\n    \"com.unity.ugui\": \"1.0.0\",\r\n    \"com.unity.visualscripting\": \"1.7.6\",\r\n    \"com.veriorpies.parrelsync\": \"https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync\",\r\n    \"com.unity.modules.ai\": \"1.0.0\",\r\n    \"com.unity.modules.androidjni\": \"1.0.0\",\r\n    \"com.unity.modules.animation\": \"1.0.0\",\r\n    \"com.unity.modules.assetbundle\": \"1.0.0\",\r\n    \"com.unity.modules.audio\": \"1.0.0\",\r\n    \"com.unity.modules.cloth\": \"1.0.0\",\r\n    \"com.unity.modules.director\": \"1.0.0\",\r\n    \"com.unity.modules.imageconversion\": \"1.0.0\",\r\n    \"com.unity.modules.imgui\": \"1.0.0\",\r\n    \"com.unity.modules.jsonserialize\": \"1.0.0\",\r\n    \"com.unity.modules.particlesystem\": \"1.0.0\",\r\n    \"com.unity.modules.physics\": \"1.0.0\",\r\n    \"com.unity.modules.physics2d\": \"1.0.0\",\r\n    \"com.unity.modules.screencapture\": \"1.0.0\",\r\n    \"com.unity.modules.terrain\": \"1.0.0\",\r\n    \"com.unity.modules.terrainphysics\": \"1.0.0\",\r\n    \"com.unity.modules.tilemap\": \"1.0.0\",\r\n    \"com.unity.modules.ui\": \"1.0.0\",\r\n    \"com.unity.modules.uielements\": \"1.0.0\",\r\n    \"com.unity.modules.umbra\": \"1.0.0\",\r\n    \"com.unity.modules.unityanalytics\": \"1.0.0\",\r\n    \"com.unity.modules.unitywebrequest\": \"1.0.0\",\r\n    \"com.unity.modules.unitywebrequestassetbundle\": \"1.0.0\",\r\n    \"com.unity.modules.unitywebrequestaudio\": \"1.0.0\",\r\n    \"com.unity.modules.unitywebrequesttexture\": \"1.0.0\",\r\n    \"com.unity.modules.unitywebrequestwww\": \"1.0.0\",\r\n    \"com.unity.modules.vehicles\": \"1.0.0\",\r\n    \"com.unity.modules.video\": \"1.0.0\",\r\n    \"com.unity.modules.vr\": \"1.0.0\",\r\n    \"com.unity.modules.wind\": \"1.0.0\",\r\n    \"com.unity.modules.xr\": \"1.0.0\"\r\n  }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Packages/manifest.json b/Packages/manifest.json
+--- a/Packages/manifest.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Packages/manifest.json	(date 1685501686912)
+@@ -1,6 +1,16 @@
+ {
++  "scopedRegistries": [
++    {
++      "name": "Unity NuGet",
++      "url": "https://unitynuget-registry.azurewebsites.net",
++      "scopes": [
++        "org.nuget"
++      ]
++    }
++  ],
+   "dependencies": {
+     "com.unity.collab-proxy": "1.15.15",
++    "com.unity.editorcoroutines": "1.0.0",
+     "com.unity.feature.development": "1.0.1",
+     "com.unity.ide.rider": "3.0.13",
+     "com.unity.ide.visualstudio": "2.0.14",
+@@ -12,6 +22,8 @@
+     "com.unity.ugui": "1.0.0",
+     "com.unity.visualscripting": "1.7.6",
+     "com.veriorpies.parrelsync": "https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync",
++    "org.nuget.microsoft.aspnetcore.signalr.client": "7.0.5",
++    "org.nuget.scriban": "2.1.0",
+     "com.unity.modules.ai": "1.0.0",
+     "com.unity.modules.androidjni": "1.0.0",
+     "com.unity.modules.animation": "1.0.0",
+Index: Assets/Scenes/SampleScene.unity
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>%YAML 1.1\r\n%TAG !u! tag:unity3d.com,2011:\r\n--- !u!29 &1\r\nOcclusionCullingSettings:\r\n  m_ObjectHideFlags: 0\r\n  serializedVersion: 2\r\n  m_OcclusionBakeSettings:\r\n    smallestOccluder: 5\r\n    smallestHole: 0.25\r\n    backfaceThreshold: 100\r\n  m_SceneGUID: 00000000000000000000000000000000\r\n  m_OcclusionCullingData: {fileID: 0}\r\n--- !u!104 &2\r\nRenderSettings:\r\n  m_ObjectHideFlags: 0\r\n  serializedVersion: 9\r\n  m_Fog: 0\r\n  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}\r\n  m_FogMode: 3\r\n  m_FogDensity: 0.01\r\n  m_LinearFogStart: 0\r\n  m_LinearFogEnd: 300\r\n  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}\r\n  m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}\r\n  m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}\r\n  m_AmbientIntensity: 1\r\n  m_AmbientMode: 0\r\n  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}\r\n  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}\r\n  m_HaloStrength: 0.5\r\n  m_FlareStrength: 1\r\n  m_FlareFadeSpeed: 3\r\n  m_HaloTexture: {fileID: 0}\r\n  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}\r\n  m_DefaultReflectionMode: 0\r\n  m_DefaultReflectionResolution: 128\r\n  m_ReflectionBounces: 1\r\n  m_ReflectionIntensity: 1\r\n  m_CustomReflection: {fileID: 0}\r\n  m_Sun: {fileID: 705507994}\r\n  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}\r\n  m_UseRadianceAmbientProbe: 0\r\n--- !u!157 &3\r\nLightmapSettings:\r\n  m_ObjectHideFlags: 0\r\n  serializedVersion: 12\r\n  m_GIWorkflowMode: 1\r\n  m_GISettings:\r\n    serializedVersion: 2\r\n    m_BounceScale: 1\r\n    m_IndirectOutputScale: 1\r\n    m_AlbedoBoost: 1\r\n    m_EnvironmentLightingMode: 0\r\n    m_EnableBakedLightmaps: 1\r\n    m_EnableRealtimeLightmaps: 0\r\n  m_LightmapEditorSettings:\r\n    serializedVersion: 12\r\n    m_Resolution: 2\r\n    m_BakeResolution: 40\r\n    m_AtlasSize: 1024\r\n    m_AO: 0\r\n    m_AOMaxDistance: 1\r\n    m_CompAOExponent: 1\r\n    m_CompAOExponentDirect: 0\r\n    m_ExtractAmbientOcclusion: 0\r\n    m_Padding: 2\r\n    m_LightmapParameters: {fileID: 0}\r\n    m_LightmapsBakeMode: 1\r\n    m_TextureCompression: 1\r\n    m_FinalGather: 0\r\n    m_FinalGatherFiltering: 1\r\n    m_FinalGatherRayCount: 256\r\n    m_ReflectionCompression: 2\r\n    m_MixedBakeMode: 2\r\n    m_BakeBackend: 1\r\n    m_PVRSampling: 1\r\n    m_PVRDirectSampleCount: 32\r\n    m_PVRSampleCount: 500\r\n    m_PVRBounces: 2\r\n    m_PVREnvironmentSampleCount: 500\r\n    m_PVREnvironmentReferencePointCount: 2048\r\n    m_PVRFilteringMode: 2\r\n    m_PVRDenoiserTypeDirect: 0\r\n    m_PVRDenoiserTypeIndirect: 0\r\n    m_PVRDenoiserTypeAO: 0\r\n    m_PVRFilterTypeDirect: 0\r\n    m_PVRFilterTypeIndirect: 0\r\n    m_PVRFilterTypeAO: 0\r\n    m_PVREnvironmentMIS: 0\r\n    m_PVRCulling: 1\r\n    m_PVRFilteringGaussRadiusDirect: 1\r\n    m_PVRFilteringGaussRadiusIndirect: 5\r\n    m_PVRFilteringGaussRadiusAO: 2\r\n    m_PVRFilteringAtrousPositionSigmaDirect: 0.5\r\n    m_PVRFilteringAtrousPositionSigmaIndirect: 2\r\n    m_PVRFilteringAtrousPositionSigmaAO: 1\r\n    m_ExportTrainingData: 0\r\n    m_TrainingDataDestination: TrainingData\r\n    m_LightProbeSampleCountMultiplier: 4\r\n  m_LightingDataAsset: {fileID: 0}\r\n  m_LightingSettings: {fileID: 0}\r\n--- !u!196 &4\r\nNavMeshSettings:\r\n  serializedVersion: 2\r\n  m_ObjectHideFlags: 0\r\n  m_BuildSettings:\r\n    serializedVersion: 2\r\n    agentTypeID: 0\r\n    agentRadius: 0.5\r\n    agentHeight: 2\r\n    agentSlope: 45\r\n    agentClimb: 0.4\r\n    ledgeDropHeight: 0\r\n    maxJumpAcrossDistance: 0\r\n    minRegionArea: 2\r\n    manualCellSize: 0\r\n    cellSize: 0.16666667\r\n    manualTileSize: 0\r\n    tileSize: 256\r\n    accuratePlacement: 0\r\n    maxJobWorkers: 0\r\n    preserveTilesOutsideBounds: 0\r\n    debug:\r\n      m_Flags: 0\r\n  m_NavMeshData: {fileID: 0}\r\n--- !u!1 &421366083\r\nGameObject:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  serializedVersion: 6\r\n  m_Component:\r\n  - component: {fileID: 421366087}\r\n  - component: {fileID: 421366086}\r\n  - component: {fileID: 421366085}\r\n  - component: {fileID: 421366084}\r\n  m_Layer: 0\r\n  m_Name: Cube\r\n  m_TagString: Untagged\r\n  m_Icon: {fileID: 0}\r\n  m_NavMeshLayer: 0\r\n  m_StaticEditorFlags: 0\r\n  m_IsActive: 1\r\n--- !u!65 &421366084\r\nBoxCollider:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 421366083}\r\n  m_Material: {fileID: 0}\r\n  m_IsTrigger: 0\r\n  m_Enabled: 1\r\n  serializedVersion: 2\r\n  m_Size: {x: 1, y: 0.64, z: 2.46}\r\n  m_Center: {x: 0.18, y: 1.93, z: -1.7}\r\n--- !u!23 &421366085\r\nMeshRenderer:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 421366083}\r\n  m_Enabled: 1\r\n  m_CastShadows: 1\r\n  m_ReceiveShadows: 1\r\n  m_DynamicOccludee: 1\r\n  m_StaticShadowCaster: 0\r\n  m_MotionVectors: 1\r\n  m_LightProbeUsage: 1\r\n  m_ReflectionProbeUsage: 1\r\n  m_RayTracingMode: 2\r\n  m_RayTraceProcedural: 0\r\n  m_RenderingLayerMask: 1\r\n  m_RendererPriority: 0\r\n  m_Materials:\r\n  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}\r\n  m_StaticBatchInfo:\r\n    firstSubMesh: 0\r\n    subMeshCount: 0\r\n  m_StaticBatchRoot: {fileID: 0}\r\n  m_ProbeAnchor: {fileID: 0}\r\n  m_LightProbeVolumeOverride: {fileID: 0}\r\n  m_ScaleInLightmap: 1\r\n  m_ReceiveGI: 1\r\n  m_PreserveUVs: 0\r\n  m_IgnoreNormalsForChartDetection: 0\r\n  m_ImportantGI: 0\r\n  m_StitchLightmapSeams: 1\r\n  m_SelectedEditorRenderState: 3\r\n  m_MinimumChartSize: 4\r\n  m_AutoUVMaxDistance: 0.5\r\n  m_AutoUVMaxAngle: 89\r\n  m_LightmapParameters: {fileID: 0}\r\n  m_SortingLayerID: 0\r\n  m_SortingLayer: 0\r\n  m_SortingOrder: 0\r\n  m_AdditionalVertexStreams: {fileID: 0}\r\n--- !u!33 &421366086\r\nMeshFilter:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 421366083}\r\n  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}\r\n--- !u!4 &421366087\r\nTransform:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 421366083}\r\n  m_LocalRotation: {x: 0.46245, y: -0.21235, z: 0.85112, w: -0.12898}\r\n  m_LocalPosition: {x: -14.8, y: 29.3, z: 11.6}\r\n  m_LocalScale: {x: 15.97, y: 6.03, z: 13.52}\r\n  m_ConstrainProportionsScale: 0\r\n  m_Children: []\r\n  m_Father: {fileID: 0}\r\n  m_RootOrder: 3\r\n  m_LocalEulerAnglesHint: {x: 28.623, y: -356.405, z: 175.167}\r\n--- !u!1 &705507993\r\nGameObject:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  serializedVersion: 6\r\n  m_Component:\r\n  - component: {fileID: 705507995}\r\n  - component: {fileID: 705507994}\r\n  m_Layer: 0\r\n  m_Name: Directional Light\r\n  m_TagString: Untagged\r\n  m_Icon: {fileID: 0}\r\n  m_NavMeshLayer: 0\r\n  m_StaticEditorFlags: 0\r\n  m_IsActive: 1\r\n--- !u!108 &705507994\r\nLight:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 705507993}\r\n  m_Enabled: 1\r\n  serializedVersion: 10\r\n  m_Type: 1\r\n  m_Shape: 0\r\n  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}\r\n  m_Intensity: 1\r\n  m_Range: 10\r\n  m_SpotAngle: 30\r\n  m_InnerSpotAngle: 21.80208\r\n  m_CookieSize: 10\r\n  m_Shadows:\r\n    m_Type: 2\r\n    m_Resolution: -1\r\n    m_CustomResolution: -1\r\n    m_Strength: 1\r\n    m_Bias: 0.05\r\n    m_NormalBias: 0.4\r\n    m_NearPlane: 0.2\r\n    m_CullingMatrixOverride:\r\n      e00: 1\r\n      e01: 0\r\n      e02: 0\r\n      e03: 0\r\n      e10: 0\r\n      e11: 1\r\n      e12: 0\r\n      e13: 0\r\n      e20: 0\r\n      e21: 0\r\n      e22: 1\r\n      e23: 0\r\n      e30: 0\r\n      e31: 0\r\n      e32: 0\r\n      e33: 1\r\n    m_UseCullingMatrixOverride: 0\r\n  m_Cookie: {fileID: 0}\r\n  m_DrawHalo: 0\r\n  m_Flare: {fileID: 0}\r\n  m_RenderMode: 0\r\n  m_CullingMask:\r\n    serializedVersion: 2\r\n    m_Bits: 4294967295\r\n  m_RenderingLayerMask: 1\r\n  m_Lightmapping: 1\r\n  m_LightShadowCasterMode: 0\r\n  m_AreaSize: {x: 1, y: 1}\r\n  m_BounceIntensity: 1\r\n  m_ColorTemperature: 6570\r\n  m_UseColorTemperature: 0\r\n  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}\r\n  m_UseBoundingSphereOverride: 0\r\n  m_UseViewFrustumForShadowCasterCull: 1\r\n  m_ShadowRadius: 0\r\n  m_ShadowAngle: 0\r\n--- !u!4 &705507995\r\nTransform:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 705507993}\r\n  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}\r\n  m_LocalPosition: {x: 0, y: 3, z: 0}\r\n  m_LocalScale: {x: 1, y: 1, z: 1}\r\n  m_ConstrainProportionsScale: 0\r\n  m_Children: []\r\n  m_Father: {fileID: 0}\r\n  m_RootOrder: 1\r\n  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}\r\n--- !u!1 &963194225\r\nGameObject:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  serializedVersion: 6\r\n  m_Component:\r\n  - component: {fileID: 963194228}\r\n  - component: {fileID: 963194227}\r\n  - component: {fileID: 963194226}\r\n  m_Layer: 0\r\n  m_Name: Main Camera\r\n  m_TagString: MainCamera\r\n  m_Icon: {fileID: 0}\r\n  m_NavMeshLayer: 0\r\n  m_StaticEditorFlags: 0\r\n  m_IsActive: 1\r\n--- !u!81 &963194226\r\nAudioListener:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 963194225}\r\n  m_Enabled: 1\r\n--- !u!20 &963194227\r\nCamera:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 963194225}\r\n  m_Enabled: 1\r\n  serializedVersion: 2\r\n  m_ClearFlags: 1\r\n  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}\r\n  m_projectionMatrixMode: 1\r\n  m_GateFitMode: 2\r\n  m_FOVAxisMode: 0\r\n  m_SensorSize: {x: 36, y: 24}\r\n  m_LensShift: {x: 0, y: 0}\r\n  m_FocalLength: 50\r\n  m_NormalizedViewPortRect:\r\n    serializedVersion: 2\r\n    x: 0\r\n    y: 0\r\n    width: 1\r\n    height: 1\r\n  near clip plane: 0.3\r\n  far clip plane: 1000\r\n  field of view: 60\r\n  orthographic: 0\r\n  orthographic size: 5\r\n  m_Depth: -1\r\n  m_CullingMask:\r\n    serializedVersion: 2\r\n    m_Bits: 4294967295\r\n  m_RenderingPath: -1\r\n  m_TargetTexture: {fileID: 0}\r\n  m_TargetDisplay: 0\r\n  m_TargetEye: 3\r\n  m_HDR: 1\r\n  m_AllowMSAA: 1\r\n  m_AllowDynamicResolution: 0\r\n  m_ForceIntoRT: 0\r\n  m_OcclusionCulling: 1\r\n  m_StereoConvergence: 10\r\n  m_StereoSeparation: 0.022\r\n--- !u!4 &963194228\r\nTransform:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 963194225}\r\n  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}\r\n  m_LocalPosition: {x: 0, y: 1, z: -10}\r\n  m_LocalScale: {x: 1, y: 1, z: 1}\r\n  m_ConstrainProportionsScale: 0\r\n  m_Children: []\r\n  m_Father: {fileID: 0}\r\n  m_RootOrder: 0\r\n  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\r\n--- !u!1 &1200371490\r\nGameObject:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  serializedVersion: 6\r\n  m_Component:\r\n  - component: {fileID: 1200371493}\r\n  - component: {fileID: 1200371491}\r\n  m_Layer: 0\r\n  m_Name: GameObject\r\n  m_TagString: Untagged\r\n  m_Icon: {fileID: 0}\r\n  m_NavMeshLayer: 0\r\n  m_StaticEditorFlags: 0\r\n  m_IsActive: 1\r\n--- !u!114 &1200371491\r\nMonoBehaviour:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 1200371490}\r\n  m_Enabled: 1\r\n  m_EditorHideFlags: 0\r\n  m_Script: {fileID: 11500000, guid: 1fe0fdfdb3b6d0549ab61ca925c49759, type: 3}\r\n  m_Name: \r\n  m_EditorClassIdentifier: \r\n  IP: 25.48.78.141\r\n  Port: 8085\r\n  ticksPerSecond: 1\r\n  Username: Enpharla\r\n  AutoConnect: 1\r\n--- !u!4 &1200371493\r\nTransform:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 1200371490}\r\n  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}\r\n  m_LocalPosition: {x: -0.9944458, y: 1.7029133, z: 23.5}\r\n  m_LocalScale: {x: 1, y: 1, z: 1}\r\n  m_ConstrainProportionsScale: 0\r\n  m_Children: []\r\n  m_Father: {fileID: 0}\r\n  m_RootOrder: 2\r\n  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\r\n--- !u!1 &1579060441\r\nGameObject:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  serializedVersion: 6\r\n  m_Component:\r\n  - component: {fileID: 1579060445}\r\n  - component: {fileID: 1579060444}\r\n  - component: {fileID: 1579060443}\r\n  - component: {fileID: 1579060442}\r\n  m_Layer: 0\r\n  m_Name: Cube (1)\r\n  m_TagString: Untagged\r\n  m_Icon: {fileID: 0}\r\n  m_NavMeshLayer: 0\r\n  m_StaticEditorFlags: 0\r\n  m_IsActive: 1\r\n--- !u!65 &1579060442\r\nBoxCollider:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 1579060441}\r\n  m_Material: {fileID: 0}\r\n  m_IsTrigger: 0\r\n  m_Enabled: 1\r\n  serializedVersion: 2\r\n  m_Size: {x: 1, y: 1, z: 1}\r\n  m_Center: {x: 0, y: 0, z: 0}\r\n--- !u!23 &1579060443\r\nMeshRenderer:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 1579060441}\r\n  m_Enabled: 1\r\n  m_CastShadows: 1\r\n  m_ReceiveShadows: 1\r\n  m_DynamicOccludee: 1\r\n  m_StaticShadowCaster: 0\r\n  m_MotionVectors: 1\r\n  m_LightProbeUsage: 1\r\n  m_ReflectionProbeUsage: 1\r\n  m_RayTracingMode: 2\r\n  m_RayTraceProcedural: 0\r\n  m_RenderingLayerMask: 1\r\n  m_RendererPriority: 0\r\n  m_Materials:\r\n  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}\r\n  m_StaticBatchInfo:\r\n    firstSubMesh: 0\r\n    subMeshCount: 0\r\n  m_StaticBatchRoot: {fileID: 0}\r\n  m_ProbeAnchor: {fileID: 0}\r\n  m_LightProbeVolumeOverride: {fileID: 0}\r\n  m_ScaleInLightmap: 1\r\n  m_ReceiveGI: 1\r\n  m_PreserveUVs: 0\r\n  m_IgnoreNormalsForChartDetection: 0\r\n  m_ImportantGI: 0\r\n  m_StitchLightmapSeams: 1\r\n  m_SelectedEditorRenderState: 3\r\n  m_MinimumChartSize: 4\r\n  m_AutoUVMaxDistance: 0.5\r\n  m_AutoUVMaxAngle: 89\r\n  m_LightmapParameters: {fileID: 0}\r\n  m_SortingLayerID: 0\r\n  m_SortingLayer: 0\r\n  m_SortingOrder: 0\r\n  m_AdditionalVertexStreams: {fileID: 0}\r\n--- !u!33 &1579060444\r\nMeshFilter:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 1579060441}\r\n  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}\r\n--- !u!4 &1579060445\r\nTransform:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 1579060441}\r\n  m_LocalRotation: {x: 0.2719, y: 0, z: 0, w: 0.96233}\r\n  m_LocalPosition: {x: 13.13, y: 23.87, z: -4.05}\r\n  m_LocalScale: {x: 1, y: 1, z: 1}\r\n  m_ConstrainProportionsScale: 0\r\n  m_Children:\r\n  - {fileID: 2147275601}\r\n  m_Father: {fileID: 0}\r\n  m_RootOrder: 4\r\n  m_LocalEulerAnglesHint: {x: 30.942, y: 0, z: 0}\r\n--- !u!1 &2147275597\r\nGameObject:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  serializedVersion: 6\r\n  m_Component:\r\n  - component: {fileID: 2147275601}\r\n  - component: {fileID: 2147275600}\r\n  - component: {fileID: 2147275599}\r\n  - component: {fileID: 2147275598}\r\n  m_Layer: 0\r\n  m_Name: Cube (2)\r\n  m_TagString: Untagged\r\n  m_Icon: {fileID: 0}\r\n  m_NavMeshLayer: 0\r\n  m_StaticEditorFlags: 0\r\n  m_IsActive: 1\r\n--- !u!65 &2147275598\r\nBoxCollider:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 2147275597}\r\n  m_Material: {fileID: 0}\r\n  m_IsTrigger: 0\r\n  m_Enabled: 1\r\n  serializedVersion: 2\r\n  m_Size: {x: 1, y: 1, z: 1}\r\n  m_Center: {x: 0, y: 0, z: 0}\r\n--- !u!23 &2147275599\r\nMeshRenderer:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 2147275597}\r\n  m_Enabled: 1\r\n  m_CastShadows: 1\r\n  m_ReceiveShadows: 1\r\n  m_DynamicOccludee: 1\r\n  m_StaticShadowCaster: 0\r\n  m_MotionVectors: 1\r\n  m_LightProbeUsage: 1\r\n  m_ReflectionProbeUsage: 1\r\n  m_RayTracingMode: 2\r\n  m_RayTraceProcedural: 0\r\n  m_RenderingLayerMask: 1\r\n  m_RendererPriority: 0\r\n  m_Materials:\r\n  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}\r\n  m_StaticBatchInfo:\r\n    firstSubMesh: 0\r\n    subMeshCount: 0\r\n  m_StaticBatchRoot: {fileID: 0}\r\n  m_ProbeAnchor: {fileID: 0}\r\n  m_LightProbeVolumeOverride: {fileID: 0}\r\n  m_ScaleInLightmap: 1\r\n  m_ReceiveGI: 1\r\n  m_PreserveUVs: 0\r\n  m_IgnoreNormalsForChartDetection: 0\r\n  m_ImportantGI: 0\r\n  m_StitchLightmapSeams: 1\r\n  m_SelectedEditorRenderState: 3\r\n  m_MinimumChartSize: 4\r\n  m_AutoUVMaxDistance: 0.5\r\n  m_AutoUVMaxAngle: 89\r\n  m_LightmapParameters: {fileID: 0}\r\n  m_SortingLayerID: 0\r\n  m_SortingLayer: 0\r\n  m_SortingOrder: 0\r\n  m_AdditionalVertexStreams: {fileID: 0}\r\n--- !u!33 &2147275600\r\nMeshFilter:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 2147275597}\r\n  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}\r\n--- !u!4 &2147275601\r\nTransform:\r\n  m_ObjectHideFlags: 0\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 2147275597}\r\n  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}\r\n  m_LocalPosition: {x: 3.43, y: 0, z: -3.74}\r\n  m_LocalScale: {x: 1, y: 1, z: 1}\r\n  m_ConstrainProportionsScale: 0\r\n  m_Children: []\r\n  m_Father: {fileID: 1579060445}\r\n  m_RootOrder: 0\r\n  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Scenes/SampleScene.unity b/Assets/Scenes/SampleScene.unity
+--- a/Assets/Scenes/SampleScene.unity	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Scenes/SampleScene.unity	(date 1685695820658)
+@@ -213,7 +213,7 @@
+   m_PrefabAsset: {fileID: 0}
+   m_GameObject: {fileID: 421366083}
+   m_LocalRotation: {x: 0.46245, y: -0.21235, z: 0.85112, w: -0.12898}
+-  m_LocalPosition: {x: -14.8, y: 29.3, z: 11.6}
++  m_LocalPosition: {x: -13.5, y: 72.7, z: -9.4}
+   m_LocalScale: {x: 15.97, y: 6.03, z: 13.52}
+   m_ConstrainProportionsScale: 0
+   m_Children: []
+@@ -307,7 +307,7 @@
+   m_PrefabAsset: {fileID: 0}
+   m_GameObject: {fileID: 705507993}
+   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
+-  m_LocalPosition: {x: 0, y: 3, z: 0}
++  m_LocalPosition: {x: 14.76, y: 49, z: -25.55}
+   m_LocalScale: {x: 1, y: 1, z: 1}
+   m_ConstrainProportionsScale: 0
+   m_Children: []
+@@ -407,7 +407,7 @@
+   serializedVersion: 6
+   m_Component:
+   - component: {fileID: 1200371493}
+-  - component: {fileID: 1200371491}
++  - component: {fileID: 1200371494}
+   m_Layer: 0
+   m_Name: GameObject
+   m_TagString: Untagged
+@@ -415,23 +415,6 @@
+   m_NavMeshLayer: 0
+   m_StaticEditorFlags: 0
+   m_IsActive: 1
+---- !u!114 &1200371491
+-MonoBehaviour:
+-  m_ObjectHideFlags: 0
+-  m_CorrespondingSourceObject: {fileID: 0}
+-  m_PrefabInstance: {fileID: 0}
+-  m_PrefabAsset: {fileID: 0}
+-  m_GameObject: {fileID: 1200371490}
+-  m_Enabled: 1
+-  m_EditorHideFlags: 0
+-  m_Script: {fileID: 11500000, guid: 1fe0fdfdb3b6d0549ab61ca925c49759, type: 3}
+-  m_Name: 
+-  m_EditorClassIdentifier: 
+-  IP: 25.48.78.141
+-  Port: 8085
+-  ticksPerSecond: 1
+-  Username: Enpharla
+-  AutoConnect: 1
+ --- !u!4 &1200371493
+ Transform:
+   m_ObjectHideFlags: 0
+@@ -447,6 +430,19 @@
+   m_Father: {fileID: 0}
+   m_RootOrder: 2
+   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
++--- !u!114 &1200371494
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 1200371490}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 6188a37283ae450d83498621820bde1d, type: 3}
++  m_Name: 
++  m_EditorClassIdentifier: 
++  Username: Saphirah
+ --- !u!1 &1579060441
+ GameObject:
+   m_ObjectHideFlags: 0
+Index: ProjectSettings/RiderScriptEditorPersistedState.asset
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>%YAML 1.1\r\n%TAG !u! tag:unity3d.com,2011:\r\n--- !u!114 &1\r\nMonoBehaviour:\r\n  m_ObjectHideFlags: 61\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 0}\r\n  m_Enabled: 1\r\n  m_EditorHideFlags: 0\r\n  m_Script: {fileID: 0}\r\n  m_Name: \r\n  m_EditorClassIdentifier: Unity.Rider.Editor:Packages.Rider.Editor:RiderScriptEditorPersistedState\r\n  lastWriteTicks: -8585257883459236364\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ProjectSettings/RiderScriptEditorPersistedState.asset b/ProjectSettings/RiderScriptEditorPersistedState.asset
+--- a/ProjectSettings/RiderScriptEditorPersistedState.asset	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/ProjectSettings/RiderScriptEditorPersistedState.asset	(date 1685695632135)
+@@ -12,4 +12,4 @@
+   m_Script: {fileID: 0}
+   m_Name: 
+   m_EditorClassIdentifier: Unity.Rider.Editor:Packages.Rider.Editor:RiderScriptEditorPersistedState
+-  lastWriteTicks: -8585257883459236364
++  lastWriteTicks: -8585159112533449550
+Index: UnityTogetherServer Source/UnityTogetherServer/Program.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System.Diagnostics;\r\nusing System.Net;\r\nusing System.Net.Sockets;\r\nusing System.Text;\r\n\r\npublic class Server\r\n{\r\n    public TcpListener server;\r\n    private List<TcpClient?> clients = new();\r\n    private List<Task> listenTasks = new();\r\n    private TcpClient currentClient;\r\n    \r\n    private int packageIndex = 0;\r\n    \r\n    public static void Main(string[] args)\r\n    {\r\n        Server server = new();\r\n        \r\n        if (args.Length > 0)\r\n        {\r\n            server.StartServer(args[0], Convert.ToInt32(args[1]));\r\n            return;\r\n        }\r\n        server.StartServer(\"25.48.78.141\", 8085);\r\n        return;\r\n        Console.WriteLine(\"Enter IP address: \");\r\n        string ip = Console.ReadLine() ?? string.Empty;\r\n        Console.WriteLine(\"Enter port: \");\r\n        int port = Convert.ToInt32(Console.ReadLine());\r\n        server.StartServer(ip, port);\r\n    }\r\n    \r\n    public void StartServer(string IP, int Port)\r\n    {\r\n        Console.WriteLine(\"Starting server on \" + IP + \":\" + Port);\r\n        server?.Stop();\r\n        server = new TcpListener(IPAddress.Parse(IP), Port);\r\n        server.Start();\r\n        Console.WriteLine(\"Server has started.\");\r\n        \r\n        packageIndex = 0;\r\n        \r\n        while (true)\r\n        {\r\n            TcpClient? newClient = server.AcceptTcpClient();\r\n            clients.Add(newClient);\r\n            Console.WriteLine(\"Client connected: \" + newClient.Client.RemoteEndPoint);\r\n            Task listenTask = new Task(() => ListenToClient(newClient));\r\n            listenTasks.Add(listenTask);\r\n            listenTask.Start();\r\n        }\r\n    }\r\n\r\n    protected void SendPackage(int packageType, string username, string package, TcpClient? packageSender)\r\n    {\r\n        packageIndex++;\r\n        List<TcpClient> brokenClients = new();\r\n        foreach (TcpClient? client in clients)\r\n        {\r\n            if (client == null || client is {Connected: false}) continue;\r\n            Stream stream = client.GetStream();\r\n            List<byte> data = Encoding.ASCII.GetBytes(packageType + \"#\" + username + \"#\" + package + \";\").ToList();\r\n\r\n            try\r\n            {\r\n                stream.Write(data.ToArray(), 0, data.Count);\r\n            }\r\n            catch (Exception e)\r\n            {\r\n                brokenClients.Add(client);\r\n            }\r\n        }\r\n        \r\n        foreach (TcpClient brokenClient in brokenClients)\r\n            DisconnectClient(brokenClient);\r\n    }\r\n\r\n    protected void DisconnectClient(TcpClient? client)\r\n    {\r\n        if (client == null) return;\r\n        clients.Remove(client);\r\n        Console.WriteLine(\"Client disconnected: \" + client?.Client?.RemoteEndPoint);\r\n        client?.Close();\r\n    }\r\n    \r\n    protected void ListenToClient(TcpClient? client)\r\n    {\r\n        NetworkStream ns = client.GetStream();\r\n        while (client is {Connected: true})\r\n        {\r\n            while (client is {Connected: true} && !ns.DataAvailable) { }\r\n\r\n            if (client is {Connected: false}) break;\r\n\r\n            byte[] msgBuffer = new byte[50000];\r\n            Task<int> readTask = ns.ReadAsync(msgBuffer, 0, msgBuffer.Length);\r\n            msgBuffer = msgBuffer.Take(readTask.Result).ToArray();\r\n            string msg = Encoding.ASCII.GetString(msgBuffer);\r\n\r\n            string[] messages = msg.Split(';');\r\n            foreach (string message in messages)\r\n            {\r\n                if (message == \"\") continue;\r\n                string[] seperatedMessage = message.Split('#');\r\n                int index = int.Parse(seperatedMessage[0]);\r\n                string user = seperatedMessage[1];\r\n                string package = seperatedMessage[2];\r\n                SendPackage(index, user, package, client);\r\n            }\r\n            Console.WriteLine(\"Received package from \" + client.Client.RemoteEndPoint + \": \" + msg);\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/Program.cs b/UnityTogetherServer Source/UnityTogetherServer/Program.cs
+--- a/UnityTogetherServer Source/UnityTogetherServer/Program.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/Program.cs	(date 1685499301952)
+@@ -1,7 +1,12 @@
++using System;
++using System.Collections.Generic;
+ using System.Diagnostics;
++using System.IO;
++using System.Linq;
+ using System.Net;
+ using System.Net.Sockets;
+ using System.Text;
++using System.Threading.Tasks;
+ 
+ public class Server
+ {
+@@ -10,24 +15,34 @@
+     private List<Task> listenTasks = new();
+     private TcpClient currentClient;
+     
++    public const string SEPARATOR = "\u001C\u001D\u001E\u001F";
++    
+     private int packageIndex = 0;
+     
++    private string sessionName = null;
++    
+     public static void Main(string[] args)
+     {
+         Server server = new();
+         
++        server.CreateSessionFile();
+         if (args.Length > 0)
+         {
+             server.StartServer(args[0], Convert.ToInt32(args[1]));
+             return;
+         }
+         server.StartServer("25.48.78.141", 8085);
+-        return;
+-        Console.WriteLine("Enter IP address: ");
+-        string ip = Console.ReadLine() ?? string.Empty;
+-        Console.WriteLine("Enter port: ");
+-        int port = Convert.ToInt32(Console.ReadLine());
+-        server.StartServer(ip, port);
++    }
++    
++    public void CreateSessionFile(string? name = null)
++    {
++        sessionName = name ?? DateTime.Now.ToString("yyyyMMddHHmmss");
++        string path = Path.Combine(Directory.GetCurrentDirectory(), "Sessions", sessionName);
++        Directory.CreateDirectory(path);
++        //Create File
++        string filePath = Path.Combine(path, "SessionData.txt");
++        File.Create(filePath);
++        Console.WriteLine("Session File created: " + filePath);
+     }
+     
+     public void StartServer(string IP, int Port)
+@@ -37,6 +52,7 @@
+         server = new TcpListener(IPAddress.Parse(IP), Port);
+         server.Start();
+         Console.WriteLine("Server has started.");
++        Console.WriteLine("Listening for connections...");
+         
+         packageIndex = 0;
+         
+@@ -55,11 +71,19 @@
+     {
+         packageIndex++;
+         List<TcpClient> brokenClients = new();
++
++        string packageContent = packageType + "#" + username + "#" + package + SEPARATOR;
++        
++        //Write Session to file
++        string path = Path.Combine(Directory.GetCurrentDirectory(), "Sessions", sessionName);
++        string filePath = Path.Combine(path, "SessionData.txt");
++        File.AppendAllText(filePath, packageContent);
++        
+         foreach (TcpClient? client in clients)
+         {
+-            if (client == null || client is {Connected: false}) continue;
++            if (client is null or {Connected: false}) continue;
+             Stream stream = client.GetStream();
+-            List<byte> data = Encoding.ASCII.GetBytes(packageType + "#" + username + "#" + package + ";").ToList();
++            List<byte> data = Convert.FromBase64String(packageContent).ToList();
+ 
+             try
+             {
+@@ -85,19 +109,20 @@
+     
+     protected void ListenToClient(TcpClient? client)
+     {
++        Console.WriteLine("Started listening to: " + client?.Client?.RemoteEndPoint);
+         NetworkStream ns = client.GetStream();
+         while (client is {Connected: true})
+         {
+             while (client is {Connected: true} && !ns.DataAvailable) { }
+-
++            
+             if (client is {Connected: false}) break;
+ 
+             byte[] msgBuffer = new byte[50000];
+             Task<int> readTask = ns.ReadAsync(msgBuffer, 0, msgBuffer.Length);
+             msgBuffer = msgBuffer.Take(readTask.Result).ToArray();
+-            string msg = Encoding.ASCII.GetString(msgBuffer);
++            string msg = Convert.ToBase64String(msgBuffer);
+ 
+-            string[] messages = msg.Split(';');
++            string[] messages = msg.Split(SEPARATOR);
+             foreach (string message in messages)
+             {
+                 if (message == "") continue;
+@@ -109,5 +134,6 @@
+             }
+             Console.WriteLine("Received package from " + client.Client.RemoteEndPoint + ": " + msg);
+         }
++        Console.WriteLine("Client disconnected: " + client?.Client?.RemoteEndPoint);
+     }
+ }
+\ No newline at end of file
+Index: UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.csproj.FileListAbsolute.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\bin\\Debug\\net6.0\\UnityTogetherServer.exe\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\bin\\Debug\\net6.0\\UnityTogetherServer.deps.json\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\bin\\Debug\\net6.0\\UnityTogetherServer.runtimeconfig.json\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\bin\\Debug\\net6.0\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\bin\\Debug\\net6.0\\ref\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\bin\\Debug\\net6.0\\UnityTogetherServer.pdb\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.csproj.AssemblyReference.cache\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.AssemblyInfoInputs.cache\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.AssemblyInfo.cs\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.csproj.CoreCompileInputs.cache\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\ref\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.pdb\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\Debug\\net6.0\\UnityTogetherServer.genruntimeconfig.cache\r\nD:\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.exe\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.exe\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.deps.json\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.runtimeconfig.json\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogether\\UnityTogetherServer\\net6.0\\ref\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.pdb\r\nD:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.exe\r\nD:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.deps.json\r\nD:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.runtimeconfig.json\r\nD:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer\\net6.0\\ref\\UnityTogetherServer.dll\r\nD:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer\\net6.0\\UnityTogetherServer.pdb\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.csproj.FileListAbsolute.txt b/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.csproj.FileListAbsolute.txt
+--- a/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.csproj.FileListAbsolute.txt	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.csproj.FileListAbsolute.txt	(date 1676004722878)
+@@ -26,3 +26,12 @@
+ D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.dll
+ D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\ref\UnityTogetherServer.dll
+ D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer\net6.0\UnityTogetherServer.pdb
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.csproj.AssemblyReference.cache
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.AssemblyInfoInputs.cache
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.AssemblyInfo.cs
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.csproj.CoreCompileInputs.cache
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.dll
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\ref\UnityTogetherServer.dll
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.pdb
++D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\obj\Debug\net6.0\UnityTogetherServer.genruntimeconfig.cache
+Index: UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>is_global = true\r\nbuild_property.TargetFramework = net6.0\r\nbuild_property.TargetPlatformMinVersion = \r\nbuild_property.UsingMicrosoftNETSdkWeb = \r\nbuild_property.ProjectTypeGuids = \r\nbuild_property.InvariantGlobalization = \r\nbuild_property.PlatformNeutralAssembly = \r\nbuild_property._SupportedPlatformList = Linux,macOS,Windows\r\nbuild_property.RootNamespace = UnityTogetherServer\r\nbuild_property.ProjectDir = D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig b/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig
+--- a/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/obj/Debug/net6.0/UnityTogetherServer.GeneratedMSBuildEditorConfig.editorconfig	(date 1676004283562)
+@@ -7,4 +7,4 @@
+ build_property.PlatformNeutralAssembly = 
+ build_property._SupportedPlatformList = Linux,macOS,Windows
+ build_property.RootNamespace = UnityTogetherServer
+-build_property.ProjectDir = D:\CodingProjects\Game Projects\UnityTogetherServer\UnityTogetherServer\
++build_property.ProjectDir = D:\CodingProjects\Game Projects\UnityTogether\UnityTogetherServer Source\UnityTogetherServer\
+Index: ProjectSettings/PackageManagerSettings.asset
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>%YAML 1.1\r\n%TAG !u! tag:unity3d.com,2011:\r\n--- !u!114 &1\r\nMonoBehaviour:\r\n  m_ObjectHideFlags: 61\r\n  m_CorrespondingSourceObject: {fileID: 0}\r\n  m_PrefabInstance: {fileID: 0}\r\n  m_PrefabAsset: {fileID: 0}\r\n  m_GameObject: {fileID: 0}\r\n  m_Enabled: 1\r\n  m_EditorHideFlags: 0\r\n  m_Script: {fileID: 13964, guid: 0000000000000000e000000000000000, type: 0}\r\n  m_Name: \r\n  m_EditorClassIdentifier: \r\n  m_EnablePreReleasePackages: 0\r\n  m_EnablePackageDependencies: 0\r\n  m_AdvancedSettingsExpanded: 1\r\n  m_ScopedRegistriesSettingsExpanded: 1\r\n  m_SeeAllPackageVersions: 0\r\n  oneTimeWarningShown: 0\r\n  m_Registries:\r\n  - m_Id: main\r\n    m_Name: \r\n    m_Url: https://packages.unity.com\r\n    m_Scopes: []\r\n    m_IsDefault: 1\r\n    m_Capabilities: 7\r\n  m_UserSelectedRegistryName: \r\n  m_UserAddingNewScopedRegistry: 0\r\n  m_RegistryInfoDraft:\r\n    m_Modified: 0\r\n    m_ErrorMessage: \r\n    m_UserModificationsInstanceId: -830\r\n    m_OriginalInstanceId: -832\r\n  m_LoadAssets: 0\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ProjectSettings/PackageManagerSettings.asset b/ProjectSettings/PackageManagerSettings.asset
+--- a/ProjectSettings/PackageManagerSettings.asset	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/ProjectSettings/PackageManagerSettings.asset	(date 1685501577652)
+@@ -25,11 +25,18 @@
+     m_Scopes: []
+     m_IsDefault: 1
+     m_Capabilities: 7
+-  m_UserSelectedRegistryName: 
++  - m_Id: scoped:Unity NuGet
++    m_Name: Unity NuGet
++    m_Url: https://unitynuget-registry.azurewebsites.net
++    m_Scopes:
++    - org.nuget
++    m_IsDefault: 0
++    m_Capabilities: 0
++  m_UserSelectedRegistryName: Unity NuGet
+   m_UserAddingNewScopedRegistry: 0
+   m_RegistryInfoDraft:
+     m_Modified: 0
+     m_ErrorMessage: 
+-    m_UserModificationsInstanceId: -830
+-    m_OriginalInstanceId: -832
++    m_UserModificationsInstanceId: -824
++    m_OriginalInstanceId: -826
+   m_LoadAssets: 0
+Index: ProjectSettings/ProjectSettings.asset
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>%YAML 1.1\r\n%TAG !u! tag:unity3d.com,2011:\r\n--- !u!129 &1\r\nPlayerSettings:\r\n  m_ObjectHideFlags: 0\r\n  serializedVersion: 23\r\n  productGUID: ca8d57552233fe24098f7f54ad9f90eb\r\n  AndroidProfiler: 0\r\n  AndroidFilterTouchesWhenObscured: 0\r\n  AndroidEnableSustainedPerformanceMode: 0\r\n  defaultScreenOrientation: 4\r\n  targetDevice: 2\r\n  useOnDemandResources: 0\r\n  accelerometerFrequency: 60\r\n  companyName: DefaultCompany\r\n  productName: UnityTogether\r\n  defaultCursor: {fileID: 0}\r\n  cursorHotspot: {x: 0, y: 0}\r\n  m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}\r\n  m_ShowUnitySplashScreen: 1\r\n  m_ShowUnitySplashLogo: 1\r\n  m_SplashScreenOverlayOpacity: 1\r\n  m_SplashScreenAnimation: 1\r\n  m_SplashScreenLogoStyle: 1\r\n  m_SplashScreenDrawMode: 0\r\n  m_SplashScreenBackgroundAnimationZoom: 1\r\n  m_SplashScreenLogoAnimationZoom: 1\r\n  m_SplashScreenBackgroundLandscapeAspect: 1\r\n  m_SplashScreenBackgroundPortraitAspect: 1\r\n  m_SplashScreenBackgroundLandscapeUvs:\r\n    serializedVersion: 2\r\n    x: 0\r\n    y: 0\r\n    width: 1\r\n    height: 1\r\n  m_SplashScreenBackgroundPortraitUvs:\r\n    serializedVersion: 2\r\n    x: 0\r\n    y: 0\r\n    width: 1\r\n    height: 1\r\n  m_SplashScreenLogos: []\r\n  m_VirtualRealitySplashScreen: {fileID: 0}\r\n  m_HolographicTrackingLossScreen: {fileID: 0}\r\n  defaultScreenWidth: 1920\r\n  defaultScreenHeight: 1080\r\n  defaultScreenWidthWeb: 960\r\n  defaultScreenHeightWeb: 600\r\n  m_StereoRenderingPath: 0\r\n  m_ActiveColorSpace: 0\r\n  m_MTRendering: 1\r\n  mipStripping: 0\r\n  numberOfMipsStripped: 0\r\n  m_StackTraceTypes: 010000000100000001000000010000000100000001000000\r\n  iosShowActivityIndicatorOnLoading: -1\r\n  androidShowActivityIndicatorOnLoading: -1\r\n  iosUseCustomAppBackgroundBehavior: 0\r\n  iosAllowHTTPDownload: 1\r\n  allowedAutorotateToPortrait: 1\r\n  allowedAutorotateToPortraitUpsideDown: 1\r\n  allowedAutorotateToLandscapeRight: 1\r\n  allowedAutorotateToLandscapeLeft: 1\r\n  useOSAutorotation: 1\r\n  use32BitDisplayBuffer: 1\r\n  preserveFramebufferAlpha: 0\r\n  disableDepthAndStencilBuffers: 0\r\n  androidStartInFullscreen: 1\r\n  androidRenderOutsideSafeArea: 1\r\n  androidUseSwappy: 1\r\n  androidBlitType: 0\r\n  androidResizableWindow: 0\r\n  androidDefaultWindowWidth: 1920\r\n  androidDefaultWindowHeight: 1080\r\n  androidMinimumWindowWidth: 400\r\n  androidMinimumWindowHeight: 300\r\n  androidFullscreenMode: 1\r\n  defaultIsNativeResolution: 1\r\n  macRetinaSupport: 1\r\n  runInBackground: 1\r\n  captureSingleScreen: 0\r\n  muteOtherAudioSources: 0\r\n  Prepare IOS For Recording: 0\r\n  Force IOS Speakers When Recording: 0\r\n  deferSystemGesturesMode: 0\r\n  hideHomeButton: 0\r\n  submitAnalytics: 1\r\n  usePlayerLog: 1\r\n  bakeCollisionMeshes: 0\r\n  forceSingleInstance: 0\r\n  useFlipModelSwapchain: 1\r\n  resizableWindow: 0\r\n  useMacAppStoreValidation: 0\r\n  macAppStoreCategory: public.app-category.games\r\n  gpuSkinning: 1\r\n  xboxPIXTextureCapture: 0\r\n  xboxEnableAvatar: 0\r\n  xboxEnableKinect: 0\r\n  xboxEnableKinectAutoTracking: 0\r\n  xboxEnableFitness: 0\r\n  visibleInBackground: 1\r\n  allowFullscreenSwitch: 1\r\n  fullscreenMode: 1\r\n  xboxSpeechDB: 0\r\n  xboxEnableHeadOrientation: 0\r\n  xboxEnableGuest: 0\r\n  xboxEnablePIXSampling: 0\r\n  metalFramebufferOnly: 0\r\n  xboxOneResolution: 0\r\n  xboxOneSResolution: 0\r\n  xboxOneXResolution: 3\r\n  xboxOneMonoLoggingLevel: 0\r\n  xboxOneLoggingLevel: 1\r\n  xboxOneDisableEsram: 0\r\n  xboxOneEnableTypeOptimization: 0\r\n  xboxOnePresentImmediateThreshold: 0\r\n  switchQueueCommandMemory: 0\r\n  switchQueueControlMemory: 16384\r\n  switchQueueComputeMemory: 262144\r\n  switchNVNShaderPoolsGranularity: 33554432\r\n  switchNVNDefaultPoolsGranularity: 16777216\r\n  switchNVNOtherPoolsGranularity: 16777216\r\n  switchNVNMaxPublicTextureIDCount: 0\r\n  switchNVNMaxPublicSamplerIDCount: 0\r\n  stadiaPresentMode: 0\r\n  stadiaTargetFramerate: 0\r\n  vulkanNumSwapchainBuffers: 3\r\n  vulkanEnableSetSRGBWrite: 0\r\n  vulkanEnablePreTransform: 1\r\n  vulkanEnableLateAcquireNextImage: 0\r\n  vulkanEnableCommandBufferRecycling: 1\r\n  m_SupportedAspectRatios:\r\n    4:3: 1\r\n    5:4: 1\r\n    16:10: 1\r\n    16:9: 1\r\n    Others: 1\r\n  bundleVersion: 0.1\r\n  preloadedAssets: []\r\n  metroInputSource: 0\r\n  wsaTransparentSwapchain: 0\r\n  m_HolographicPauseOnTrackingLoss: 1\r\n  xboxOneDisableKinectGpuReservation: 1\r\n  xboxOneEnable7thCore: 1\r\n  vrSettings:\r\n    enable360StereoCapture: 0\r\n  isWsaHolographicRemotingEnabled: 0\r\n  enableFrameTimingStats: 0\r\n  useHDRDisplay: 0\r\n  D3DHDRBitDepth: 0\r\n  m_ColorGamuts: 00000000\r\n  targetPixelDensity: 30\r\n  resolutionScalingMode: 0\r\n  androidSupportedAspectRatio: 1\r\n  androidMaxAspectRatio: 2.1\r\n  applicationIdentifier: {}\r\n  buildNumber:\r\n    Standalone: 0\r\n    iPhone: 0\r\n    tvOS: 0\r\n  overrideDefaultApplicationIdentifier: 0\r\n  AndroidBundleVersionCode: 1\r\n  AndroidMinSdkVersion: 22\r\n  AndroidTargetSdkVersion: 0\r\n  AndroidPreferredInstallLocation: 1\r\n  aotOptions: \r\n  stripEngineCode: 1\r\n  iPhoneStrippingLevel: 0\r\n  iPhoneScriptCallOptimization: 0\r\n  ForceInternetPermission: 0\r\n  ForceSDCardPermission: 0\r\n  CreateWallpaper: 0\r\n  APKExpansionFiles: 0\r\n  keepLoadedShadersAlive: 0\r\n  StripUnusedMeshComponents: 1\r\n  VertexChannelCompressionMask: 4054\r\n  iPhoneSdkVersion: 988\r\n  iOSTargetOSVersionString: 11.0\r\n  tvOSSdkVersion: 0\r\n  tvOSRequireExtendedGameController: 0\r\n  tvOSTargetOSVersionString: 11.0\r\n  uIPrerenderedIcon: 0\r\n  uIRequiresPersistentWiFi: 0\r\n  uIRequiresFullScreen: 1\r\n  uIStatusBarHidden: 1\r\n  uIExitOnSuspend: 0\r\n  uIStatusBarStyle: 0\r\n  appleTVSplashScreen: {fileID: 0}\r\n  appleTVSplashScreen2x: {fileID: 0}\r\n  tvOSSmallIconLayers: []\r\n  tvOSSmallIconLayers2x: []\r\n  tvOSLargeIconLayers: []\r\n  tvOSLargeIconLayers2x: []\r\n  tvOSTopShelfImageLayers: []\r\n  tvOSTopShelfImageLayers2x: []\r\n  tvOSTopShelfImageWideLayers: []\r\n  tvOSTopShelfImageWideLayers2x: []\r\n  iOSLaunchScreenType: 0\r\n  iOSLaunchScreenPortrait: {fileID: 0}\r\n  iOSLaunchScreenLandscape: {fileID: 0}\r\n  iOSLaunchScreenBackgroundColor:\r\n    serializedVersion: 2\r\n    rgba: 0\r\n  iOSLaunchScreenFillPct: 100\r\n  iOSLaunchScreenSize: 100\r\n  iOSLaunchScreenCustomXibPath: \r\n  iOSLaunchScreeniPadType: 0\r\n  iOSLaunchScreeniPadImage: {fileID: 0}\r\n  iOSLaunchScreeniPadBackgroundColor:\r\n    serializedVersion: 2\r\n    rgba: 0\r\n  iOSLaunchScreeniPadFillPct: 100\r\n  iOSLaunchScreeniPadSize: 100\r\n  iOSLaunchScreeniPadCustomXibPath: \r\n  iOSLaunchScreenCustomStoryboardPath: \r\n  iOSLaunchScreeniPadCustomStoryboardPath: \r\n  iOSDeviceRequirements: []\r\n  iOSURLSchemes: []\r\n  macOSURLSchemes: []\r\n  iOSBackgroundModes: 0\r\n  iOSMetalForceHardShadows: 0\r\n  metalEditorSupport: 1\r\n  metalAPIValidation: 1\r\n  iOSRenderExtraFrameOnPause: 0\r\n  iosCopyPluginsCodeInsteadOfSymlink: 0\r\n  appleDeveloperTeamID: \r\n  iOSManualSigningProvisioningProfileID: \r\n  tvOSManualSigningProvisioningProfileID: \r\n  iOSManualSigningProvisioningProfileType: 0\r\n  tvOSManualSigningProvisioningProfileType: 0\r\n  appleEnableAutomaticSigning: 0\r\n  iOSRequireARKit: 0\r\n  iOSAutomaticallyDetectAndAddCapabilities: 1\r\n  appleEnableProMotion: 0\r\n  shaderPrecisionModel: 0\r\n  clonedFromGUID: c0afd0d1d80e3634a9dac47e8a0426ea\r\n  templatePackageId: com.unity.template.3d@8.1.0\r\n  templateDefaultScene: Assets/Scenes/SampleScene.unity\r\n  useCustomMainManifest: 0\r\n  useCustomLauncherManifest: 0\r\n  useCustomMainGradleTemplate: 0\r\n  useCustomLauncherGradleManifest: 0\r\n  useCustomBaseGradleTemplate: 0\r\n  useCustomGradlePropertiesTemplate: 0\r\n  useCustomProguardFile: 0\r\n  AndroidTargetArchitectures: 1\r\n  AndroidTargetDevices: 0\r\n  AndroidSplashScreenScale: 0\r\n  androidSplashScreen: {fileID: 0}\r\n  AndroidKeystoreName: \r\n  AndroidKeyaliasName: \r\n  AndroidBuildApkPerCpuArchitecture: 0\r\n  AndroidTVCompatibility: 0\r\n  AndroidIsGame: 1\r\n  AndroidEnableTango: 0\r\n  androidEnableBanner: 1\r\n  androidUseLowAccuracyLocation: 0\r\n  androidUseCustomKeystore: 0\r\n  m_AndroidBanners:\r\n  - width: 320\r\n    height: 180\r\n    banner: {fileID: 0}\r\n  androidGamepadSupportLevel: 0\r\n  chromeosInputEmulation: 1\r\n  AndroidMinifyWithR8: 0\r\n  AndroidMinifyRelease: 0\r\n  AndroidMinifyDebug: 0\r\n  AndroidValidateAppBundleSize: 1\r\n  AndroidAppBundleSizeToValidate: 150\r\n  m_BuildTargetIcons: []\r\n  m_BuildTargetPlatformIcons: []\r\n  m_BuildTargetBatching:\r\n  - m_BuildTarget: Standalone\r\n    m_StaticBatching: 1\r\n    m_DynamicBatching: 0\r\n  - m_BuildTarget: tvOS\r\n    m_StaticBatching: 1\r\n    m_DynamicBatching: 0\r\n  - m_BuildTarget: Android\r\n    m_StaticBatching: 1\r\n    m_DynamicBatching: 0\r\n  - m_BuildTarget: iPhone\r\n    m_StaticBatching: 1\r\n    m_DynamicBatching: 0\r\n  - m_BuildTarget: WebGL\r\n    m_StaticBatching: 0\r\n    m_DynamicBatching: 0\r\n  m_BuildTargetGraphicsJobs:\r\n  - m_BuildTarget: MacStandaloneSupport\r\n    m_GraphicsJobs: 0\r\n  - m_BuildTarget: Switch\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: MetroSupport\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: AppleTVSupport\r\n    m_GraphicsJobs: 0\r\n  - m_BuildTarget: BJMSupport\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: LinuxStandaloneSupport\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: PS4Player\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: iOSSupport\r\n    m_GraphicsJobs: 0\r\n  - m_BuildTarget: WindowsStandaloneSupport\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: XboxOnePlayer\r\n    m_GraphicsJobs: 1\r\n  - m_BuildTarget: LuminSupport\r\n    m_GraphicsJobs: 0\r\n  - m_BuildTarget: AndroidPlayer\r\n    m_GraphicsJobs: 0\r\n  - m_BuildTarget: WebGLSupport\r\n    m_GraphicsJobs: 0\r\n  m_BuildTargetGraphicsJobMode:\r\n  - m_BuildTarget: PS4Player\r\n    m_GraphicsJobMode: 0\r\n  - m_BuildTarget: XboxOnePlayer\r\n    m_GraphicsJobMode: 0\r\n  m_BuildTargetGraphicsAPIs:\r\n  - m_BuildTarget: AndroidPlayer\r\n    m_APIs: 150000000b000000\r\n    m_Automatic: 1\r\n  - m_BuildTarget: iOSSupport\r\n    m_APIs: 10000000\r\n    m_Automatic: 1\r\n  - m_BuildTarget: AppleTVSupport\r\n    m_APIs: 10000000\r\n    m_Automatic: 1\r\n  - m_BuildTarget: WebGLSupport\r\n    m_APIs: 0b000000\r\n    m_Automatic: 1\r\n  m_BuildTargetVRSettings:\r\n  - m_BuildTarget: Standalone\r\n    m_Enabled: 0\r\n    m_Devices:\r\n    - Oculus\r\n    - OpenVR\r\n  openGLRequireES31: 0\r\n  openGLRequireES31AEP: 0\r\n  openGLRequireES32: 0\r\n  m_TemplateCustomTags: {}\r\n  mobileMTRendering:\r\n    Android: 1\r\n    iPhone: 1\r\n    tvOS: 1\r\n  m_BuildTargetGroupLightmapEncodingQuality:\r\n  - m_BuildTarget: Android\r\n    m_EncodingQuality: 1\r\n  - m_BuildTarget: iPhone\r\n    m_EncodingQuality: 1\r\n  - m_BuildTarget: tvOS\r\n    m_EncodingQuality: 1\r\n  m_BuildTargetGroupLightmapSettings: []\r\n  m_BuildTargetNormalMapEncoding:\r\n  - m_BuildTarget: Android\r\n    m_Encoding: 1\r\n  - m_BuildTarget: iPhone\r\n    m_Encoding: 1\r\n  - m_BuildTarget: tvOS\r\n    m_Encoding: 1\r\n  m_BuildTargetDefaultTextureCompressionFormat:\r\n  - m_BuildTarget: Android\r\n    m_Format: 3\r\n  playModeTestRunnerEnabled: 0\r\n  runPlayModeTestAsEditModeTest: 0\r\n  actionOnDotNetUnhandledException: 1\r\n  enableInternalProfiler: 0\r\n  logObjCUncaughtExceptions: 1\r\n  enableCrashReportAPI: 0\r\n  cameraUsageDescription: \r\n  locationUsageDescription: \r\n  microphoneUsageDescription: \r\n  bluetoothUsageDescription: \r\n  switchNMETAOverride: \r\n  switchNetLibKey: \r\n  switchSocketMemoryPoolSize: 6144\r\n  switchSocketAllocatorPoolSize: 128\r\n  switchSocketConcurrencyLimit: 14\r\n  switchScreenResolutionBehavior: 2\r\n  switchUseCPUProfiler: 0\r\n  switchUseGOLDLinker: 0\r\n  switchLTOSetting: 0\r\n  switchApplicationID: 0x01004b9000490000\r\n  switchNSODependencies: \r\n  switchTitleNames_0: \r\n  switchTitleNames_1: \r\n  switchTitleNames_2: \r\n  switchTitleNames_3: \r\n  switchTitleNames_4: \r\n  switchTitleNames_5: \r\n  switchTitleNames_6: \r\n  switchTitleNames_7: \r\n  switchTitleNames_8: \r\n  switchTitleNames_9: \r\n  switchTitleNames_10: \r\n  switchTitleNames_11: \r\n  switchTitleNames_12: \r\n  switchTitleNames_13: \r\n  switchTitleNames_14: \r\n  switchTitleNames_15: \r\n  switchPublisherNames_0: \r\n  switchPublisherNames_1: \r\n  switchPublisherNames_2: \r\n  switchPublisherNames_3: \r\n  switchPublisherNames_4: \r\n  switchPublisherNames_5: \r\n  switchPublisherNames_6: \r\n  switchPublisherNames_7: \r\n  switchPublisherNames_8: \r\n  switchPublisherNames_9: \r\n  switchPublisherNames_10: \r\n  switchPublisherNames_11: \r\n  switchPublisherNames_12: \r\n  switchPublisherNames_13: \r\n  switchPublisherNames_14: \r\n  switchPublisherNames_15: \r\n  switchIcons_0: {fileID: 0}\r\n  switchIcons_1: {fileID: 0}\r\n  switchIcons_2: {fileID: 0}\r\n  switchIcons_3: {fileID: 0}\r\n  switchIcons_4: {fileID: 0}\r\n  switchIcons_5: {fileID: 0}\r\n  switchIcons_6: {fileID: 0}\r\n  switchIcons_7: {fileID: 0}\r\n  switchIcons_8: {fileID: 0}\r\n  switchIcons_9: {fileID: 0}\r\n  switchIcons_10: {fileID: 0}\r\n  switchIcons_11: {fileID: 0}\r\n  switchIcons_12: {fileID: 0}\r\n  switchIcons_13: {fileID: 0}\r\n  switchIcons_14: {fileID: 0}\r\n  switchIcons_15: {fileID: 0}\r\n  switchSmallIcons_0: {fileID: 0}\r\n  switchSmallIcons_1: {fileID: 0}\r\n  switchSmallIcons_2: {fileID: 0}\r\n  switchSmallIcons_3: {fileID: 0}\r\n  switchSmallIcons_4: {fileID: 0}\r\n  switchSmallIcons_5: {fileID: 0}\r\n  switchSmallIcons_6: {fileID: 0}\r\n  switchSmallIcons_7: {fileID: 0}\r\n  switchSmallIcons_8: {fileID: 0}\r\n  switchSmallIcons_9: {fileID: 0}\r\n  switchSmallIcons_10: {fileID: 0}\r\n  switchSmallIcons_11: {fileID: 0}\r\n  switchSmallIcons_12: {fileID: 0}\r\n  switchSmallIcons_13: {fileID: 0}\r\n  switchSmallIcons_14: {fileID: 0}\r\n  switchSmallIcons_15: {fileID: 0}\r\n  switchManualHTML: \r\n  switchAccessibleURLs: \r\n  switchLegalInformation: \r\n  switchMainThreadStackSize: 1048576\r\n  switchPresenceGroupId: \r\n  switchLogoHandling: 0\r\n  switchReleaseVersion: 0\r\n  switchDisplayVersion: 1.0.0\r\n  switchStartupUserAccount: 0\r\n  switchTouchScreenUsage: 0\r\n  switchSupportedLanguagesMask: 0\r\n  switchLogoType: 0\r\n  switchApplicationErrorCodeCategory: \r\n  switchUserAccountSaveDataSize: 0\r\n  switchUserAccountSaveDataJournalSize: 0\r\n  switchApplicationAttribute: 0\r\n  switchCardSpecSize: -1\r\n  switchCardSpecClock: -1\r\n  switchRatingsMask: 0\r\n  switchRatingsInt_0: 0\r\n  switchRatingsInt_1: 0\r\n  switchRatingsInt_2: 0\r\n  switchRatingsInt_3: 0\r\n  switchRatingsInt_4: 0\r\n  switchRatingsInt_5: 0\r\n  switchRatingsInt_6: 0\r\n  switchRatingsInt_7: 0\r\n  switchRatingsInt_8: 0\r\n  switchRatingsInt_9: 0\r\n  switchRatingsInt_10: 0\r\n  switchRatingsInt_11: 0\r\n  switchRatingsInt_12: 0\r\n  switchLocalCommunicationIds_0: \r\n  switchLocalCommunicationIds_1: \r\n  switchLocalCommunicationIds_2: \r\n  switchLocalCommunicationIds_3: \r\n  switchLocalCommunicationIds_4: \r\n  switchLocalCommunicationIds_5: \r\n  switchLocalCommunicationIds_6: \r\n  switchLocalCommunicationIds_7: \r\n  switchParentalControl: 0\r\n  switchAllowsScreenshot: 1\r\n  switchAllowsVideoCapturing: 1\r\n  switchAllowsRuntimeAddOnContentInstall: 0\r\n  switchDataLossConfirmation: 0\r\n  switchUserAccountLockEnabled: 0\r\n  switchSystemResourceMemory: 16777216\r\n  switchSupportedNpadStyles: 22\r\n  switchNativeFsCacheSize: 32\r\n  switchIsHoldTypeHorizontal: 0\r\n  switchSupportedNpadCount: 8\r\n  switchSocketConfigEnabled: 0\r\n  switchTcpInitialSendBufferSize: 32\r\n  switchTcpInitialReceiveBufferSize: 64\r\n  switchTcpAutoSendBufferSizeMax: 256\r\n  switchTcpAutoReceiveBufferSizeMax: 256\r\n  switchUdpSendBufferSize: 9\r\n  switchUdpReceiveBufferSize: 42\r\n  switchSocketBufferEfficiency: 4\r\n  switchSocketInitializeEnabled: 1\r\n  switchNetworkInterfaceManagerInitializeEnabled: 1\r\n  switchPlayerConnectionEnabled: 1\r\n  switchUseNewStyleFilepaths: 0\r\n  switchUseMicroSleepForYield: 1\r\n  switchEnableRamDiskSupport: 0\r\n  switchMicroSleepForYieldTime: 25\r\n  switchRamDiskSpaceSize: 12\r\n  ps4NPAgeRating: 12\r\n  ps4NPTitleSecret: \r\n  ps4NPTrophyPackPath: \r\n  ps4ParentalLevel: 11\r\n  ps4ContentID: ED1633-NPXX51362_00-0000000000000000\r\n  ps4Category: 0\r\n  ps4MasterVersion: 01.00\r\n  ps4AppVersion: 01.00\r\n  ps4AppType: 0\r\n  ps4ParamSfxPath: \r\n  ps4VideoOutPixelFormat: 0\r\n  ps4VideoOutInitialWidth: 1920\r\n  ps4VideoOutBaseModeInitialWidth: 1920\r\n  ps4VideoOutReprojectionRate: 60\r\n  ps4PronunciationXMLPath: \r\n  ps4PronunciationSIGPath: \r\n  ps4BackgroundImagePath: \r\n  ps4StartupImagePath: \r\n  ps4StartupImagesFolder: \r\n  ps4IconImagesFolder: \r\n  ps4SaveDataImagePath: \r\n  ps4SdkOverride: \r\n  ps4BGMPath: \r\n  ps4ShareFilePath: \r\n  ps4ShareOverlayImagePath: \r\n  ps4PrivacyGuardImagePath: \r\n  ps4ExtraSceSysFile: \r\n  ps4NPtitleDatPath: \r\n  ps4RemotePlayKeyAssignment: -1\r\n  ps4RemotePlayKeyMappingDir: \r\n  ps4PlayTogetherPlayerCount: 0\r\n  ps4EnterButtonAssignment: 1\r\n  ps4ApplicationParam1: 0\r\n  ps4ApplicationParam2: 0\r\n  ps4ApplicationParam3: 0\r\n  ps4ApplicationParam4: 0\r\n  ps4DownloadDataSize: 0\r\n  ps4GarlicHeapSize: 2048\r\n  ps4ProGarlicHeapSize: 2560\r\n  playerPrefsMaxSize: 32768\r\n  ps4Passcode: frAQBc8Wsa1xVPfvJcrgRYwTiizs2trQ\r\n  ps4pnSessions: 1\r\n  ps4pnPresence: 1\r\n  ps4pnFriends: 1\r\n  ps4pnGameCustomData: 1\r\n  playerPrefsSupport: 0\r\n  enableApplicationExit: 0\r\n  resetTempFolder: 1\r\n  restrictedAudioUsageRights: 0\r\n  ps4UseResolutionFallback: 0\r\n  ps4ReprojectionSupport: 0\r\n  ps4UseAudio3dBackend: 0\r\n  ps4UseLowGarlicFragmentationMode: 1\r\n  ps4SocialScreenEnabled: 0\r\n  ps4ScriptOptimizationLevel: 0\r\n  ps4Audio3dVirtualSpeakerCount: 14\r\n  ps4attribCpuUsage: 0\r\n  ps4PatchPkgPath: \r\n  ps4PatchLatestPkgPath: \r\n  ps4PatchChangeinfoPath: \r\n  ps4PatchDayOne: 0\r\n  ps4attribUserManagement: 0\r\n  ps4attribMoveSupport: 0\r\n  ps4attrib3DSupport: 0\r\n  ps4attribShareSupport: 0\r\n  ps4attribExclusiveVR: 0\r\n  ps4disableAutoHideSplash: 0\r\n  ps4videoRecordingFeaturesUsed: 0\r\n  ps4contentSearchFeaturesUsed: 0\r\n  ps4CompatibilityPS5: 0\r\n  ps4GPU800MHz: 1\r\n  ps4attribEyeToEyeDistanceSettingVR: 0\r\n  ps4IncludedModules: []\r\n  ps4attribVROutputEnabled: 0\r\n  monoEnv: \r\n  splashScreenBackgroundSourceLandscape: {fileID: 0}\r\n  splashScreenBackgroundSourcePortrait: {fileID: 0}\r\n  blurSplashScreenBackground: 1\r\n  spritePackerPolicy: \r\n  webGLMemorySize: 16\r\n  webGLExceptionSupport: 1\r\n  webGLNameFilesAsHashes: 0\r\n  webGLDataCaching: 1\r\n  webGLDebugSymbols: 0\r\n  webGLEmscriptenArgs: \r\n  webGLModulesDirectory: \r\n  webGLTemplate: APPLICATION:Default\r\n  webGLAnalyzeBuildSize: 0\r\n  webGLUseEmbeddedResources: 0\r\n  webGLCompressionFormat: 1\r\n  webGLWasmArithmeticExceptions: 0\r\n  webGLLinkerTarget: 1\r\n  webGLThreadsSupport: 0\r\n  webGLDecompressionFallback: 0\r\n  scriptingDefineSymbols: {}\r\n  additionalCompilerArguments: {}\r\n  platformArchitecture: {}\r\n  scriptingBackend: {}\r\n  il2cppCompilerConfiguration: {}\r\n  managedStrippingLevel: {}\r\n  incrementalIl2cppBuild: {}\r\n  suppressCommonWarnings: 1\r\n  allowUnsafeCode: 0\r\n  useDeterministicCompilation: 1\r\n  enableRoslynAnalyzers: 1\r\n  additionalIl2CppArgs: \r\n  scriptingRuntimeVersion: 1\r\n  gcIncremental: 1\r\n  assemblyVersionValidation: 1\r\n  gcWBarrierValidation: 0\r\n  apiCompatibilityLevelPerPlatform: {}\r\n  m_RenderingPath: 1\r\n  m_MobileRenderingPath: 1\r\n  metroPackageName: Template_3D\r\n  metroPackageVersion: \r\n  metroCertificatePath: \r\n  metroCertificatePassword: \r\n  metroCertificateSubject: \r\n  metroCertificateIssuer: \r\n  metroCertificateNotAfter: 0000000000000000\r\n  metroApplicationDescription: Template_3D\r\n  wsaImages: {}\r\n  metroTileShortName: \r\n  metroTileShowName: 0\r\n  metroMediumTileShowName: 0\r\n  metroLargeTileShowName: 0\r\n  metroWideTileShowName: 0\r\n  metroSupportStreamingInstall: 0\r\n  metroLastRequiredScene: 0\r\n  metroDefaultTileSize: 1\r\n  metroTileForegroundText: 2\r\n  metroTileBackgroundColor: {r: 0.13333334, g: 0.17254902, b: 0.21568628, a: 0}\r\n  metroSplashScreenBackgroundColor: {r: 0.12941177, g: 0.17254902, b: 0.21568628, a: 1}\r\n  metroSplashScreenUseBackgroundColor: 0\r\n  platformCapabilities: {}\r\n  metroTargetDeviceFamilies: {}\r\n  metroFTAName: \r\n  metroFTAFileTypes: []\r\n  metroProtocolName: \r\n  vcxProjDefaultLanguage: \r\n  XboxOneProductId: \r\n  XboxOneUpdateKey: \r\n  XboxOneSandboxId: \r\n  XboxOneContentId: \r\n  XboxOneTitleId: \r\n  XboxOneSCId: \r\n  XboxOneGameOsOverridePath: \r\n  XboxOnePackagingOverridePath: \r\n  XboxOneAppManifestOverridePath: \r\n  XboxOneVersion: 1.0.0.0\r\n  XboxOnePackageEncryption: 0\r\n  XboxOnePackageUpdateGranularity: 2\r\n  XboxOneDescription: \r\n  XboxOneLanguage:\r\n  - enus\r\n  XboxOneCapability: []\r\n  XboxOneGameRating: {}\r\n  XboxOneIsContentPackage: 0\r\n  XboxOneEnhancedXboxCompatibilityMode: 0\r\n  XboxOneEnableGPUVariability: 1\r\n  XboxOneSockets: {}\r\n  XboxOneSplashScreen: {fileID: 0}\r\n  XboxOneAllowedProductIds: []\r\n  XboxOnePersistentLocalStorageSize: 0\r\n  XboxOneXTitleMemory: 8\r\n  XboxOneOverrideIdentityName: \r\n  XboxOneOverrideIdentityPublisher: \r\n  vrEditorSettings: {}\r\n  cloudServicesEnabled:\r\n    UNet: 1\r\n  luminIcon:\r\n    m_Name: \r\n    m_ModelFolderPath: \r\n    m_PortalFolderPath: \r\n  luminCert:\r\n    m_CertPath: \r\n    m_SignPackage: 1\r\n  luminIsChannelApp: 0\r\n  luminVersion:\r\n    m_VersionCode: 1\r\n    m_VersionName: \r\n  apiCompatibilityLevel: 6\r\n  activeInputHandler: 0\r\n  cloudProjectId: \r\n  framebufferDepthMemorylessMode: 0\r\n  qualitySettingsNames: []\r\n  projectName: \r\n  organizationId: \r\n  cloudEnabled: 0\r\n  legacyClampBlendShapeWeights: 0\r\n  playerDataPath: \r\n  forceSRGBBlit: 1\r\n  virtualTexturingSupportEnabled: 0\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ProjectSettings/ProjectSettings.asset b/ProjectSettings/ProjectSettings.asset
+--- a/ProjectSettings/ProjectSettings.asset	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/ProjectSettings/ProjectSettings.asset	(date 1685504643440)
+@@ -152,7 +152,8 @@
+   resolutionScalingMode: 0
+   androidSupportedAspectRatio: 1
+   androidMaxAspectRatio: 2.1
+-  applicationIdentifier: {}
++  applicationIdentifier:
++    Standalone: com.DefaultCompany.UnityTogether
+   buildNumber:
+     Standalone: 0
+     iPhone: 0
+Index: UnityTogetherServer Source/UnityTogetherServer/obj/project.assets.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\r\n  \"version\": 3,\r\n  \"targets\": {\r\n    \"net6.0\": {}\r\n  },\r\n  \"libraries\": {},\r\n  \"projectFileDependencyGroups\": {\r\n    \"net6.0\": []\r\n  },\r\n  \"packageFolders\": {\r\n    \"C:\\\\Users\\\\othel\\\\.nuget\\\\packages\\\\\": {},\r\n    \"C:\\\\Program Files (x86)\\\\Microsoft Visual Studio\\\\Shared\\\\NuGetPackages\": {}\r\n  },\r\n  \"project\": {\r\n    \"version\": \"1.0.0\",\r\n    \"restore\": {\r\n      \"projectUniqueName\": \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\",\r\n      \"projectName\": \"UnityTogetherServer\",\r\n      \"projectPath\": \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\",\r\n      \"packagesPath\": \"C:\\\\Users\\\\othel\\\\.nuget\\\\packages\\\\\",\r\n      \"outputPath\": \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\obj\\\\\",\r\n      \"projectStyle\": \"PackageReference\",\r\n      \"fallbackFolders\": [\r\n        \"C:\\\\Program Files (x86)\\\\Microsoft Visual Studio\\\\Shared\\\\NuGetPackages\"\r\n      ],\r\n      \"configFilePaths\": [\r\n        \"C:\\\\Users\\\\othel\\\\AppData\\\\Roaming\\\\NuGet\\\\NuGet.Config\",\r\n        \"C:\\\\Program Files (x86)\\\\NuGet\\\\Config\\\\Microsoft.VisualStudio.FallbackLocation.config\",\r\n        \"C:\\\\Program Files (x86)\\\\NuGet\\\\Config\\\\Microsoft.VisualStudio.Offline.config\"\r\n      ],\r\n      \"originalTargetFrameworks\": [\r\n        \"net6.0\"\r\n      ],\r\n      \"sources\": {\r\n        \"C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\NuGetPackages\\\\\": {},\r\n        \"https://api.nuget.org/v3/index.json\": {}\r\n      },\r\n      \"frameworks\": {\r\n        \"net6.0\": {\r\n          \"targetAlias\": \"net6.0\",\r\n          \"projectReferences\": {}\r\n        }\r\n      },\r\n      \"warningProperties\": {\r\n        \"warnAsError\": [\r\n          \"NU1605\"\r\n        ]\r\n      }\r\n    },\r\n    \"frameworks\": {\r\n      \"net6.0\": {\r\n        \"targetAlias\": \"net6.0\",\r\n        \"imports\": [\r\n          \"net461\",\r\n          \"net462\",\r\n          \"net47\",\r\n          \"net471\",\r\n          \"net472\",\r\n          \"net48\"\r\n        ],\r\n        \"assetTargetFallback\": true,\r\n        \"warn\": true,\r\n        \"frameworkReferences\": {\r\n          \"Microsoft.NETCore.App\": {\r\n            \"privateAssets\": \"all\"\r\n          }\r\n        },\r\n        \"runtimeIdentifierGraphPath\": \"C:\\\\Program Files\\\\dotnet\\\\sdk\\\\6.0.101\\\\RuntimeIdentifierGraph.json\"\r\n      }\r\n    }\r\n  }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/obj/project.assets.json b/UnityTogetherServer Source/UnityTogetherServer/obj/project.assets.json
+--- a/UnityTogetherServer Source/UnityTogetherServer/obj/project.assets.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/obj/project.assets.json	(date 1676004289230)
+@@ -14,11 +14,11 @@
+   "project": {
+     "version": "1.0.0",
+     "restore": {
+-      "projectUniqueName": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
++      "projectUniqueName": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
+       "projectName": "UnityTogetherServer",
+-      "projectPath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
++      "projectPath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
+       "packagesPath": "C:\\Users\\othel\\.nuget\\packages\\",
+-      "outputPath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\",
++      "outputPath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\obj\\",
+       "projectStyle": "PackageReference",
+       "fallbackFolders": [
+         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+Index: UnityTogetherServer Source/UnityTogetherServer/obj/project.packagespec.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>\"restore\":{\"projectUniqueName\":\"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\",\"projectName\":\"UnityTogetherServer\",\"projectPath\":\"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\",\"outputPath\":\"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\obj\\\\\",\"projectStyle\":\"PackageReference\",\"fallbackFolders\":[\"C:\\\\Program Files (x86)\\\\Microsoft Visual Studio\\\\Shared\\\\NuGetPackages\"],\"originalTargetFrameworks\":[\"net6.0\"],\"sources\":{\"C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\NuGetPackages\\\\\":{},\"https://api.nuget.org/v3/index.json\":{}},\"frameworks\":{\"net6.0\":{\"targetAlias\":\"net6.0\",\"projectReferences\":{}}},\"warningProperties\":{\"warnAsError\":[\"NU1605\"]}}\"frameworks\":{\"net6.0\":{\"targetAlias\":\"net6.0\",\"imports\":[\"net461\",\"net462\",\"net47\",\"net471\",\"net472\",\"net48\"],\"assetTargetFallback\":true,\"warn\":true,\"frameworkReferences\":{\"Microsoft.NETCore.App\":{\"privateAssets\":\"all\"}},\"runtimeIdentifierGraphPath\":\"C:\\\\Program Files\\\\dotnet\\\\sdk\\\\6.0.101\\\\RuntimeIdentifierGraph.json\"}}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/obj/project.packagespec.json b/UnityTogetherServer Source/UnityTogetherServer/obj/project.packagespec.json
+--- a/UnityTogetherServer Source/UnityTogetherServer/obj/project.packagespec.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/obj/project.packagespec.json	(date 1676004283822)
+@@ -1,1 +1,1 @@
+-"restore":{"projectUniqueName":"D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj","projectName":"UnityTogetherServer","projectPath":"D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj","outputPath":"D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\","projectStyle":"PackageReference","fallbackFolders":["C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"],"originalTargetFrameworks":["net6.0"],"sources":{"C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\":{},"https://api.nuget.org/v3/index.json":{}},"frameworks":{"net6.0":{"targetAlias":"net6.0","projectReferences":{}}},"warningProperties":{"warnAsError":["NU1605"]}}"frameworks":{"net6.0":{"targetAlias":"net6.0","imports":["net461","net462","net47","net471","net472","net48"],"assetTargetFallback":true,"warn":true,"frameworkReferences":{"Microsoft.NETCore.App":{"privateAssets":"all"}},"runtimeIdentifierGraphPath":"C:\\Program Files\\dotnet\\sdk\\6.0.101\\RuntimeIdentifierGraph.json"}}
+\ No newline at end of file
++"restore":{"projectUniqueName":"D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj","projectName":"UnityTogetherServer","projectPath":"D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj","outputPath":"D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\obj\\","projectStyle":"PackageReference","fallbackFolders":["C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"],"originalTargetFrameworks":["net6.0"],"sources":{"C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\":{},"https://api.nuget.org/v3/index.json":{}},"frameworks":{"net6.0":{"targetAlias":"net6.0","projectReferences":{}}},"warningProperties":{"warnAsError":["NU1605"]}}"frameworks":{"net6.0":{"targetAlias":"net6.0","imports":["net461","net462","net47","net471","net472","net48"],"assetTargetFallback":true,"warn":true,"frameworkReferences":{"Microsoft.NETCore.App":{"privateAssets":"all"}},"runtimeIdentifierGraphPath":"C:\\Program Files\\dotnet\\sdk\\6.0.101\\RuntimeIdentifierGraph.json"}}
+\ No newline at end of file
+Index: UnityTogetherServer Source/UnityTogetherServer/obj/rider.project.restore.info
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>16758123696990824
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/obj/rider.project.restore.info b/UnityTogetherServer Source/UnityTogetherServer/obj/rider.project.restore.info
+--- a/UnityTogetherServer Source/UnityTogetherServer/obj/rider.project.restore.info	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/obj/rider.project.restore.info	(date 1685500734258)
+@@ -1,1 +1,1 @@
+-16758123696990824
+\ No newline at end of file
++16760042892462408
+\ No newline at end of file
+Index: UnityTogetherServer Source/UnityTogetherServer/obj/UnityTogetherServer.csproj.nuget.dgspec.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\r\n  \"format\": 1,\r\n  \"restore\": {\r\n    \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\": {}\r\n  },\r\n  \"projects\": {\r\n    \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\": {\r\n      \"version\": \"1.0.0\",\r\n      \"restore\": {\r\n        \"projectUniqueName\": \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\",\r\n        \"projectName\": \"UnityTogetherServer\",\r\n        \"projectPath\": \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\UnityTogetherServer.csproj\",\r\n        \"packagesPath\": \"C:\\\\Users\\\\othel\\\\.nuget\\\\packages\\\\\",\r\n        \"outputPath\": \"D:\\\\CodingProjects\\\\Game Projects\\\\UnityTogetherServer\\\\UnityTogetherServer\\\\obj\\\\\",\r\n        \"projectStyle\": \"PackageReference\",\r\n        \"fallbackFolders\": [\r\n          \"C:\\\\Program Files (x86)\\\\Microsoft Visual Studio\\\\Shared\\\\NuGetPackages\"\r\n        ],\r\n        \"configFilePaths\": [\r\n          \"C:\\\\Users\\\\othel\\\\AppData\\\\Roaming\\\\NuGet\\\\NuGet.Config\",\r\n          \"C:\\\\Program Files (x86)\\\\NuGet\\\\Config\\\\Microsoft.VisualStudio.FallbackLocation.config\",\r\n          \"C:\\\\Program Files (x86)\\\\NuGet\\\\Config\\\\Microsoft.VisualStudio.Offline.config\"\r\n        ],\r\n        \"originalTargetFrameworks\": [\r\n          \"net6.0\"\r\n        ],\r\n        \"sources\": {\r\n          \"C:\\\\Program Files (x86)\\\\Microsoft SDKs\\\\NuGetPackages\\\\\": {},\r\n          \"https://api.nuget.org/v3/index.json\": {}\r\n        },\r\n        \"frameworks\": {\r\n          \"net6.0\": {\r\n            \"targetAlias\": \"net6.0\",\r\n            \"projectReferences\": {}\r\n          }\r\n        },\r\n        \"warningProperties\": {\r\n          \"warnAsError\": [\r\n            \"NU1605\"\r\n          ]\r\n        }\r\n      },\r\n      \"frameworks\": {\r\n        \"net6.0\": {\r\n          \"targetAlias\": \"net6.0\",\r\n          \"imports\": [\r\n            \"net461\",\r\n            \"net462\",\r\n            \"net47\",\r\n            \"net471\",\r\n            \"net472\",\r\n            \"net48\"\r\n          ],\r\n          \"assetTargetFallback\": true,\r\n          \"warn\": true,\r\n          \"frameworkReferences\": {\r\n            \"Microsoft.NETCore.App\": {\r\n              \"privateAssets\": \"all\"\r\n            }\r\n          },\r\n          \"runtimeIdentifierGraphPath\": \"C:\\\\Program Files\\\\dotnet\\\\sdk\\\\6.0.101\\\\RuntimeIdentifierGraph.json\"\r\n        }\r\n      }\r\n    }\r\n  }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer Source/UnityTogetherServer/obj/UnityTogetherServer.csproj.nuget.dgspec.json b/UnityTogetherServer Source/UnityTogetherServer/obj/UnityTogetherServer.csproj.nuget.dgspec.json
+--- a/UnityTogetherServer Source/UnityTogetherServer/obj/UnityTogetherServer.csproj.nuget.dgspec.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer Source/UnityTogetherServer/obj/UnityTogetherServer.csproj.nuget.dgspec.json	(date 1676004289246)
+@@ -1,17 +1,17 @@
+ {
+   "format": 1,
+   "restore": {
+-    "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj": {}
++    "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj": {}
+   },
+   "projects": {
+-    "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj": {
++    "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj": {
+       "version": "1.0.0",
+       "restore": {
+-        "projectUniqueName": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
++        "projectUniqueName": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
+         "projectName": "UnityTogetherServer",
+-        "projectPath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\UnityTogetherServer.csproj",
++        "projectPath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\UnityTogetherServer.csproj",
+         "packagesPath": "C:\\Users\\othel\\.nuget\\packages\\",
+-        "outputPath": "D:\\CodingProjects\\Game Projects\\UnityTogetherServer\\UnityTogetherServer\\obj\\",
++        "outputPath": "D:\\CodingProjects\\Game Projects\\UnityTogether\\UnityTogetherServer Source\\UnityTogetherServer\\obj\\",
+         "projectStyle": "PackageReference",
+         "fallbackFolders": [
+           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+Index: Assets/Communication.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Collections;\r\nusing System.Collections.Generic;\r\nusing System.IO;\r\nusing System.Linq;\r\nusing System.Net.Sockets;\r\nusing System.Text;\r\nusing System.Threading.Tasks;\r\nusing UnityEditor;\r\nusing UnityEngine;\r\n\r\n[ExecuteInEditMode]\r\npublic abstract class Communication : MonoBehaviour\r\n{\r\n    [Header(\"Server Config\")]\r\n    public string IP = \"\";\r\n    public int Port = 8085;\r\n    [Range(1, 30)]\r\n    public int ticksPerSecond = 10;\r\n\r\n    [Header(\"User Config\")]\r\n    public string Username = \"\";\r\n    \r\n    private string inputStream = \"\";\r\n\r\n    public abstract bool IsConnected();\r\n    protected abstract Stream GetStream();\r\n    \r\n    //Package ID, Content, UserID\r\n    public Action<int, string, string> OnMessageReceived;\r\n    public Action OnRender;\r\n    \r\n    public Action OnConnect;\r\n    \r\n    public TcpClient client;\r\n    \r\n    public static Communication Instance { get; protected set; }\r\n\r\n    private void OnDrawGizmos() => OnRender?.Invoke();\r\n\r\n    public virtual void SendPackage(Package package)\r\n    {\r\n        if (!IsConnected()) return;\r\n        Stream stream = GetStream();\r\n        List<byte> data = Encoding.ASCII.GetBytes(Package.GetPackageIndex(package) + \"#\" + Username + \"#\" + package + \";\").ToList();\r\n        \r\n        stream.Write(data.ToArray(), 0, data.Count);\r\n    }\r\n\r\n    protected virtual IEnumerator ListenToClient(TcpClient client)\r\n    { \r\n        NetworkStream ns = client.GetStream();\r\n        while (client is {Connected: true})\r\n        {\r\n            yield return new WaitUntil(() => ns.DataAvailable);\r\n            byte[] msgBuffer = new byte[50000];\r\n            Task<int> readTask = ns.ReadAsync(msgBuffer, 0, msgBuffer.Length);\r\n            msgBuffer = msgBuffer.Take(readTask.Result).ToArray();\r\n            string msg = Encoding.ASCII.GetString(msgBuffer);\r\n            \r\n            string[] messages = msg.Split(';');\r\n            foreach (string message in messages)\r\n            {\r\n                if (message == \"\") continue;\r\n                string[] seperatedMessage = message.Split('#');\r\n                int index = int.Parse(seperatedMessage[0]);\r\n                string user = seperatedMessage[1];\r\n                //Debug.Log(Username + \" received Message from Server: \" + seperatedMessage[2]);\r\n                OnMessageReceived?.Invoke(index, seperatedMessage[2], user);\r\n            }\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Communication.cs b/Assets/Communication.cs
+--- a/Assets/Communication.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Communication.cs	(date 1685499408130)
+@@ -12,6 +12,8 @@
+ [ExecuteInEditMode]
+ public abstract class Communication : MonoBehaviour
+ {
++    public const string SEPARATOR = "\u001C\u001D\u001E\u001F";
++    
+     [Header("Server Config")]
+     public string IP = "";
+     public int Port = 8085;
+@@ -42,7 +44,8 @@
+     {
+         if (!IsConnected()) return;
+         Stream stream = GetStream();
+-        List<byte> data = Encoding.ASCII.GetBytes(Package.GetPackageIndex(package) + "#" + Username + "#" + package + ";").ToList();
++        Debug.Log(Package.GetPackageIndex(package) + "#" + Username + "#" + package + SEPARATOR);
++        List<byte> data = Convert.FromBase64String(Package.GetPackageIndex(package) + "#" + Username + "#" + package + SEPARATOR).ToList();
+         
+         stream.Write(data.ToArray(), 0, data.Count);
+     }
+@@ -52,13 +55,16 @@
+         NetworkStream ns = client.GetStream();
+         while (client is {Connected: true})
+         {
+-            yield return new WaitUntil(() => ns.DataAvailable);
++            yield return new WaitUntilEditor(() => client is {Connected: false} || ns.DataAvailable);
++            
++            if (client is {Connected: false}) break;
++            
+             byte[] msgBuffer = new byte[50000];
+             Task<int> readTask = ns.ReadAsync(msgBuffer, 0, msgBuffer.Length);
+             msgBuffer = msgBuffer.Take(readTask.Result).ToArray();
+-            string msg = Encoding.ASCII.GetString(msgBuffer);
++            string msg = Convert.ToBase64String(msgBuffer);
+             
+-            string[] messages = msg.Split(';');
++            string[] messages = msg.Split(SEPARATOR);
+             foreach (string message in messages)
+             {
+                 if (message == "") continue;
+Index: Assets/Client.cs
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>using System;\r\nusing System.Collections;\r\nusing System.IO;\r\nusing System.Net;\r\nusing System.Net.Sockets;\r\nusing Unity.EditorCoroutines.Editor;\r\nusing UnityEditor;\r\nusing UnityEngine;\r\n\r\n[ExecuteInEditMode]\r\npublic class Client : Communication\r\n{\r\n    public Action OnUpdate;\r\n    \r\n    private CameraDrawer drawer;\r\n    private GameObjectSync gameObjectSync;\r\n\r\n    public bool AutoConnect = true;\r\n\r\n    [InitializeOnLoadMethod]\r\n    private static void AutoConnectToServer()\r\n    {\r\n        Client client = FindObjectOfType<Client>();\r\n        if(!client.AutoConnect) return;\r\n        client.ConnectToServer();\r\n        AssemblyReloadEvents.beforeAssemblyReload += () =>\r\n        {\r\n            client.client.Close();\r\n        };\r\n    }\r\n\r\n    public void ConnectToServer()\r\n    {\r\n        client = new TcpClient();\r\n        client.Connect(IPAddress.Parse(IP), Port);\r\n        EditorCoroutineUtility.StartCoroutine(ListenToClient(client), this);\r\n        EditorCoroutineUtility.StartCoroutine(UpdateLoop(), this);\r\n        OnConnect?.Invoke();\r\n        Instance = this;\r\n    }\r\n\r\n    public IEnumerator UpdateLoop()\r\n    {\r\n        drawer ??= new CameraDrawer(this);\r\n        gameObjectSync ??= new GameObjectSync(this);\r\n        while (IsConnected())\r\n        {\r\n            yield return new WaitForSeconds(1f / ticksPerSecond);\r\n            OnUpdate?.Invoke();\r\n        }\r\n    }\r\n    \r\n    public override bool IsConnected() => client is {Connected: true};\r\n    protected override Stream GetStream() => client.GetStream();\r\n}\r\n\r\n[CustomEditor(typeof(Client))]\r\npublic class ClientEditor : Editor\r\n{\r\n    public override void OnInspectorGUI()\r\n    {\r\n        base.OnInspectorGUI();\r\n\r\n        Client client = (Client)target;\r\n\r\n        if(client.IsConnected())\r\n            EditorGUILayout.HelpBox(\"Connected to server\", MessageType.Info);\r\n        if (GUILayout.Button(\"Connect\"))\r\n            client.ConnectToServer();\r\n        if (GUILayout.Button(\"Start Server\"))\r\n        {\r\n            //Start server in a CMD Console\r\n            string path = Application.dataPath + \"/../UnityTogetherServer/net6.0/UnityTogetherServer.exe\";\r\n            \r\n            System.Diagnostics.Process.Start(path, client.IP + \" \" + client.Port);\r\n        }\r\n\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Assets/Client.cs b/Assets/Client.cs
+--- a/Assets/Client.cs	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Assets/Client.cs	(date 1685502897786)
+@@ -14,6 +14,7 @@
+     
+     private CameraDrawer drawer;
+     private GameObjectSync gameObjectSync;
++    private FileSync fileSync;
+ 
+     public bool AutoConnect = true;
+ 
+@@ -21,35 +22,48 @@
+     private static void AutoConnectToServer()
+     {
+         Client client = FindObjectOfType<Client>();
++        if(!client) return;
+         if(!client.AutoConnect) return;
+         client.ConnectToServer();
+         AssemblyReloadEvents.beforeAssemblyReload += () =>
+         {
+-            client.client.Close();
++            client.client?.Close();
+         };
+     }
+ 
+     public void ConnectToServer()
+     {
+-        client = new TcpClient();
+-        client.Connect(IPAddress.Parse(IP), Port);
+-        EditorCoroutineUtility.StartCoroutine(ListenToClient(client), this);
+-        EditorCoroutineUtility.StartCoroutine(UpdateLoop(), this);
+-        OnConnect?.Invoke();
+-        Instance = this;
++        try
++        {
++            client = new TcpClient();
++            client.Connect(IPAddress.Parse(IP), Port);
++            EditorCoroutineUtility.StartCoroutine(ListenToClient(client), this);
++            EditorCoroutineUtility.StartCoroutine(UpdateLoop(), this);
++            OnConnect?.Invoke();
++            Instance = this;
++        } catch (Exception e)
++        {
++            Debug.LogError(e);
++        }
+     }
++
++    public void Disconnect() => client.Close();
+ 
+     public IEnumerator UpdateLoop()
+     {
+-        drawer ??= new CameraDrawer(this);
+-        gameObjectSync ??= new GameObjectSync(this);
++        Debug.Log("Update Loop started");
++        //drawer ??= new CameraDrawer(this);
++        //gameObjectSync ??= new GameObjectSync(this);
++        //fileSync ??= new FileSync(this);
+         while (IsConnected())
+         {
+-            yield return new WaitForSeconds(1f / ticksPerSecond);
++            yield return new WaitForSecondsEditor(1f / ticksPerSecond);
+             OnUpdate?.Invoke();
++            Debug.Log("Updating");
+         }
++        Debug.Log("Update Loop ended");
+     }
+-    
++
+     public override bool IsConnected() => client is {Connected: true};
+     protected override Stream GetStream() => client.GetStream();
+ }
+@@ -65,8 +79,16 @@
+ 
+         if(client.IsConnected())
+             EditorGUILayout.HelpBox("Connected to server", MessageType.Info);
+-        if (GUILayout.Button("Connect"))
+-            client.ConnectToServer();
++        if (!client.IsConnected())
++        {
++            if (GUILayout.Button("Connect"))
++                client.ConnectToServer();
++        }
++        else
++        {
++            if (GUILayout.Button("Disconnect"))
++                client.Disconnect();
++        }
+         if (GUILayout.Button("Start Server"))
+         {
+             //Start server in a CMD Console
+Index: Packages/packages-lock.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\r\n  \"dependencies\": {\r\n    \"com.unity.burst\": {\r\n      \"version\": \"1.7.2\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.mathematics\": \"1.2.1\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.collab-proxy\": {\r\n      \"version\": \"1.15.15\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.services.core\": \"1.0.1\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.collections\": {\r\n      \"version\": \"1.4.0\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.burst\": \"1.6.6\",\r\n        \"com.unity.nuget.mono-cecil\": \"1.11.4\",\r\n        \"com.unity.test-framework\": \"1.1.31\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.editorcoroutines\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.ext.nunit\": {\r\n      \"version\": \"1.0.6\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.feature.development\": {\r\n      \"version\": \"1.0.1\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.ide.visualstudio\": \"2.0.14\",\r\n        \"com.unity.ide.rider\": \"3.0.13\",\r\n        \"com.unity.ide.vscode\": \"1.2.5\",\r\n        \"com.unity.editorcoroutines\": \"1.0.0\",\r\n        \"com.unity.performance.profile-analyzer\": \"1.1.1\",\r\n        \"com.unity.test-framework\": \"1.1.31\",\r\n        \"com.unity.testtools.codecoverage\": \"1.0.1\"\r\n      }\r\n    },\r\n    \"com.unity.ide.rider\": {\r\n      \"version\": \"3.0.13\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.ext.nunit\": \"1.0.6\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.ide.visualstudio\": {\r\n      \"version\": \"2.0.14\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.test-framework\": \"1.1.9\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.ide.vscode\": {\r\n      \"version\": \"1.2.5\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.jobs\": {\r\n      \"version\": \"0.70.0-preview.7\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.collections\": \"1.4.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.mathematics\": {\r\n      \"version\": \"1.2.5\",\r\n      \"depth\": 2,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.nuget.mono-cecil\": {\r\n      \"version\": \"1.11.4\",\r\n      \"depth\": 2,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.performance.profile-analyzer\": {\r\n      \"version\": \"1.1.1\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.properties\": {\r\n      \"version\": \"2.1.0-exp.2\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.test-framework.performance\": \"2.8.0-preview\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.serialization\": {\r\n      \"version\": \"2.1.1-exp.1\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.collections\": \"1.4.0\",\r\n        \"com.unity.burst\": \"1.7.2\",\r\n        \"com.unity.jobs\": \"0.70.0-preview.7\",\r\n        \"com.unity.properties\": \"2.1.0-exp.2\",\r\n        \"com.unity.test-framework.performance\": \"2.8.0-preview\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.services.core\": {\r\n      \"version\": \"1.0.1\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.settings-manager\": {\r\n      \"version\": \"1.0.3\",\r\n      \"depth\": 2,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {},\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.test-framework\": {\r\n      \"version\": \"1.1.31\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.ext.nunit\": \"1.0.6\",\r\n        \"com.unity.modules.imgui\": \"1.0.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.test-framework.performance\": {\r\n      \"version\": \"2.8.0-preview\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.test-framework\": \"1.1.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.testtools.codecoverage\": {\r\n      \"version\": \"1.0.1\",\r\n      \"depth\": 1,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.test-framework\": \"1.0.16\",\r\n        \"com.unity.settings-manager\": \"1.0.1\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.textmeshpro\": {\r\n      \"version\": \"3.0.6\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.ugui\": \"1.0.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.timeline\": {\r\n      \"version\": \"1.6.4\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.director\": \"1.0.0\",\r\n        \"com.unity.modules.animation\": \"1.0.0\",\r\n        \"com.unity.modules.audio\": \"1.0.0\",\r\n        \"com.unity.modules.particlesystem\": \"1.0.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.unity.ugui\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.ui\": \"1.0.0\",\r\n        \"com.unity.modules.imgui\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.visualscripting\": {\r\n      \"version\": \"1.7.6\",\r\n      \"depth\": 0,\r\n      \"source\": \"registry\",\r\n      \"dependencies\": {\r\n        \"com.unity.ugui\": \"1.0.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\"\r\n      },\r\n      \"url\": \"https://packages.unity.com\"\r\n    },\r\n    \"com.veriorpies.parrelsync\": {\r\n      \"version\": \"https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync\",\r\n      \"depth\": 0,\r\n      \"source\": \"git\",\r\n      \"dependencies\": {},\r\n      \"hash\": \"f45424822189ebd875d864a17d7f03b72eafbff7\"\r\n    },\r\n    \"com.unity.modules.ai\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.androidjni\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.animation\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.assetbundle\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.audio\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.cloth\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.physics\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.director\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.audio\": \"1.0.0\",\r\n        \"com.unity.modules.animation\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.imageconversion\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.imgui\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.jsonserialize\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.particlesystem\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.physics\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.physics2d\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.screencapture\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.imageconversion\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.subsystems\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 1,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.terrain\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.terrainphysics\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.physics\": \"1.0.0\",\r\n        \"com.unity.modules.terrain\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.tilemap\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.physics2d\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.ui\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.uielements\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.ui\": \"1.0.0\",\r\n        \"com.unity.modules.imgui\": \"1.0.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\",\r\n        \"com.unity.modules.uielementsnative\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.uielementsnative\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 1,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.ui\": \"1.0.0\",\r\n        \"com.unity.modules.imgui\": \"1.0.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.umbra\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.unityanalytics\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.unitywebrequest\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.unitywebrequestassetbundle\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.assetbundle\": \"1.0.0\",\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.unitywebrequestaudio\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\",\r\n        \"com.unity.modules.audio\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.unitywebrequesttexture\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\",\r\n        \"com.unity.modules.imageconversion\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.unitywebrequestwww\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\",\r\n        \"com.unity.modules.unitywebrequestassetbundle\": \"1.0.0\",\r\n        \"com.unity.modules.unitywebrequestaudio\": \"1.0.0\",\r\n        \"com.unity.modules.audio\": \"1.0.0\",\r\n        \"com.unity.modules.assetbundle\": \"1.0.0\",\r\n        \"com.unity.modules.imageconversion\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.vehicles\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.physics\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.video\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.audio\": \"1.0.0\",\r\n        \"com.unity.modules.ui\": \"1.0.0\",\r\n        \"com.unity.modules.unitywebrequest\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.vr\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\",\r\n        \"com.unity.modules.physics\": \"1.0.0\",\r\n        \"com.unity.modules.xr\": \"1.0.0\"\r\n      }\r\n    },\r\n    \"com.unity.modules.wind\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {}\r\n    },\r\n    \"com.unity.modules.xr\": {\r\n      \"version\": \"1.0.0\",\r\n      \"depth\": 0,\r\n      \"source\": \"builtin\",\r\n      \"dependencies\": {\r\n        \"com.unity.modules.physics\": \"1.0.0\",\r\n        \"com.unity.modules.jsonserialize\": \"1.0.0\",\r\n        \"com.unity.modules.subsystems\": \"1.0.0\"\r\n      }\r\n    }\r\n  }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/Packages/packages-lock.json b/Packages/packages-lock.json
+--- a/Packages/packages-lock.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/Packages/packages-lock.json	(date 1685501686968)
+@@ -31,7 +31,7 @@
+     },
+     "com.unity.editorcoroutines": {
+       "version": "1.0.0",
+-      "depth": 1,
++      "depth": 0,
+       "source": "registry",
+       "dependencies": {},
+       "url": "https://packages.unity.com"
+@@ -228,6 +228,276 @@
+       "dependencies": {},
+       "hash": "f45424822189ebd875d864a17d7f03b72eafbff7"
+     },
++    "org.nuget.microsoft.aspnetcore.connections.abstractions": {
++      "version": "7.0.5",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.extensions.features": "7.0.5",
++        "org.nuget.microsoft.bcl.asyncinterfaces": "1.0.0",
++        "org.nuget.system.io.pipelines": "7.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.aspnetcore.http.connections.client": {
++      "version": "7.0.5",
++      "depth": 1,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.aspnetcore.http.connections.common": "7.0.5",
++        "org.nuget.microsoft.extensions.logging.abstractions": "7.0.0",
++        "org.nuget.microsoft.extensions.options": "7.0.1"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.aspnetcore.http.connections.common": {
++      "version": "7.0.5",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.aspnetcore.connections.abstractions": "7.0.5",
++        "org.nuget.system.text.json": "7.0.2"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.aspnetcore.signalr.client": {
++      "version": "7.0.5",
++      "depth": 0,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.aspnetcore.signalr.client.core": "7.0.5",
++        "org.nuget.microsoft.aspnetcore.http.connections.client": "7.0.5"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.aspnetcore.signalr.client.core": {
++      "version": "7.0.5",
++      "depth": 1,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.aspnetcore.signalr.protocols.json": "7.0.5",
++        "org.nuget.microsoft.aspnetcore.signalr.common": "7.0.5",
++        "org.nuget.microsoft.extensions.dependencyinjection": "7.0.0",
++        "org.nuget.microsoft.extensions.logging": "7.0.0",
++        "org.nuget.system.threading.channels": "7.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.aspnetcore.signalr.common": {
++      "version": "7.0.5",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.aspnetcore.connections.abstractions": "7.0.5",
++        "org.nuget.microsoft.extensions.options": "7.0.1",
++        "org.nuget.system.text.json": "7.0.2"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.aspnetcore.signalr.protocols.json": {
++      "version": "7.0.5",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.aspnetcore.signalr.common": "7.0.5"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.bcl.asyncinterfaces": {
++      "version": "7.0.0",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.threading.tasks.extensions": "4.5.4"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.dependencyinjection": {
++      "version": "7.0.0",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.bcl.asyncinterfaces": "7.0.0",
++        "org.nuget.microsoft.extensions.dependencyinjection.abstractions": "7.0.0",
++        "org.nuget.system.threading.tasks.extensions": "4.5.4"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.dependencyinjection.abstractions": {
++      "version": "7.0.0",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.bcl.asyncinterfaces": "7.0.0",
++        "org.nuget.system.threading.tasks.extensions": "4.5.4"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.features": {
++      "version": "7.0.5",
++      "depth": 4,
++      "source": "registry",
++      "dependencies": {},
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.logging": {
++      "version": "7.0.0",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.bcl.asyncinterfaces": "7.0.0",
++        "org.nuget.microsoft.extensions.dependencyinjection.abstractions": "7.0.0",
++        "org.nuget.microsoft.extensions.dependencyinjection": "7.0.0",
++        "org.nuget.microsoft.extensions.logging.abstractions": "7.0.0",
++        "org.nuget.microsoft.extensions.options": "7.0.0",
++        "org.nuget.system.diagnostics.diagnosticsource": "7.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.logging.abstractions": {
++      "version": "7.0.0",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.buffers": "4.5.1",
++        "org.nuget.system.memory": "4.5.5"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.options": {
++      "version": "7.0.1",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.extensions.dependencyinjection.abstractions": "7.0.0",
++        "org.nuget.microsoft.extensions.primitives": "7.0.0",
++        "org.nuget.system.componentmodel.annotations": "5.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.microsoft.extensions.primitives": {
++      "version": "7.0.0",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.memory": "4.5.5",
++        "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.scriban": {
++      "version": "2.1.0",
++      "depth": 0,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.threading.tasks.extensions": "4.5.1"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.buffers": {
++      "version": "4.5.1",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {},
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.componentmodel.annotations": {
++      "version": "5.0.0",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {},
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.diagnostics.diagnosticsource": {
++      "version": "7.0.0",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.memory": "4.5.5",
++        "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.io.pipelines": {
++      "version": "7.0.0",
++      "depth": 4,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.buffers": "4.5.1",
++        "org.nuget.system.memory": "4.5.5",
++        "org.nuget.system.threading.tasks.extensions": "4.5.4"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.memory": {
++      "version": "4.5.5",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.buffers": "4.5.1",
++        "org.nuget.system.numerics.vectors": "4.4.0",
++        "org.nuget.system.runtime.compilerservices.unsafe": "4.5.3"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.numerics.vectors": {
++      "version": "4.5.0",
++      "depth": 4,
++      "source": "registry",
++      "dependencies": {},
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.runtime.compilerservices.unsafe": {
++      "version": "6.0.0",
++      "depth": 4,
++      "source": "registry",
++      "dependencies": {},
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.text.encodings.web": {
++      "version": "7.0.0",
++      "depth": 4,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.buffers": "4.5.1",
++        "org.nuget.system.memory": "4.5.5",
++        "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.text.json": {
++      "version": "7.0.2",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.microsoft.bcl.asyncinterfaces": "7.0.0",
++        "org.nuget.system.text.encodings.web": "7.0.0",
++        "org.nuget.system.buffers": "4.5.1",
++        "org.nuget.system.memory": "4.5.5",
++        "org.nuget.system.numerics.vectors": "4.5.0",
++        "org.nuget.system.runtime.compilerservices.unsafe": "6.0.0",
++        "org.nuget.system.threading.tasks.extensions": "4.5.4"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.threading.channels": {
++      "version": "7.0.0",
++      "depth": 2,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.threading.tasks.extensions": "4.5.4"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
++    "org.nuget.system.threading.tasks.extensions": {
++      "version": "4.5.4",
++      "depth": 3,
++      "source": "registry",
++      "dependencies": {
++        "org.nuget.system.runtime.compilerservices.unsafe": "4.5.3"
++      },
++      "url": "https://unitynuget-registry.azurewebsites.net"
++    },
+     "com.unity.modules.ai": {
+       "version": "1.0.0",
+       "depth": 0,
+Index: UnityTogetherServer/net6.0/UnityTogetherServer.runtimeconfig.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\r\n  \"runtimeOptions\": {\r\n    \"tfm\": \"net6.0\",\r\n    \"framework\": {\r\n      \"name\": \"Microsoft.NETCore.App\",\r\n      \"version\": \"6.0.0\"\r\n    }\r\n  }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/UnityTogetherServer/net6.0/UnityTogetherServer.runtimeconfig.json b/UnityTogetherServer/net6.0/UnityTogetherServer.runtimeconfig.json
+--- a/UnityTogetherServer/net6.0/UnityTogetherServer.runtimeconfig.json	(revision a05a1c9d47657ca8a8570c7a10cdd49b5416e23c)
++++ b/UnityTogetherServer/net6.0/UnityTogetherServer.runtimeconfig.json	(date 1685500781202)
+@@ -1,9 +1,19 @@
+ {
+   "runtimeOptions": {
+     "tfm": "net6.0",
+-    "framework": {
+-      "name": "Microsoft.NETCore.App",
+-      "version": "6.0.0"
++    "frameworks": [
++      {
++        "name": "Microsoft.NETCore.App",
++        "version": "6.0.0"
++      },
++      {
++        "name": "Microsoft.AspNetCore.App",
++        "version": "6.0.0"
++      }
++    ],
++    "configProperties": {
++      "System.GC.Server": true,
++      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
+     }
+   }
+ }
+\ No newline at end of file
