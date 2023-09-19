@@ -38,13 +38,12 @@ public class UnityTogetherClient : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
+                Debug.Log("Error executing packages: " + e);
             }
     }
 
     private void OnEnable()
     {
-        Username = EditorPrefs.GetString("UnityTogetherUsername", "Saphirah");
         AssemblyReloadEvents.afterAssemblyReload += Connect;
         if(Instance != null)
             Debug.LogWarning("Multiple UnityTogetherClient instances detected. This is not supported.");
@@ -71,6 +70,7 @@ public class UnityTogetherClient : MonoBehaviour
 
     public async Task ConnectToServer()
     {
+        Username = EditorPrefs.GetString("UnityTogetherUsername", "Saphirah");
         connection = new HubConnectionBuilder()
             .WithUrl("http://" + IP + ":5000/myhub")
             .Build();

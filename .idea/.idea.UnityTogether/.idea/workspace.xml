@@ -2,74 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="63c2d7fc-69d2-4ff7-8ea8-ce86b54683a0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/UnityTogether/Packages/Base.meta" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Assets/Scripts/UnityTogether/Processors/Base.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/NewBehaviourScript.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/NewBehaviourScript.cs.meta" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/NewBehaviourScript1.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Assets/NewBehaviourScript1.cs.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityTogether/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Client.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Client.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Communication.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Communication.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Editor.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Editor/MyCustomSettings.asset" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Editor/MyCustomSettings.asset.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Editor/ReadOnlyDrawer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Editor/ReadOnlyDrawer.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/EditorCoroutineExtensions.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/EditorCoroutineExtensions/WaitForSecondsEditor.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/EditorCoroutineExtensions/WaitForSecondsEditor.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/EditorCoroutineExtensions/WaitUntilEditor.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/EditorCoroutineExtensions/WaitUntilEditor.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/GameObjectDictionary.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/GameObjectDictionary.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/ObjectChangeEventExample.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/ObjectChangeEventExample.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Package.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Package.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PackageManager.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/PackageManager.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/CameraTransformPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/CameraTransformPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/ChangeScenePackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/FileDeletedPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/FileDeletedPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/FilePackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/FilePackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/FileRenamedPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/FileRenamedPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectAddComponentPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectChangeParentPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectChangeParentPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectCreatePackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectCreatePackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectDestroyPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectDestroyPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectRemoveComponentPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectSerializationPackage.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Packages/GameObjectSerializationPackage.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processor.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processor.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors/CameraDrawer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors/CameraDrawer.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors/FileSync.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors/FileSync.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Processors/GameObjectSync.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/ReadOnlyAttribute.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/ReadOnlyAttribute.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/UnityTogetherSettings.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Settings/UnityTogetherSettings.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/UnityTogetherClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/UnityTogetherClient.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Utils.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Utils/GameObjectUtils.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Utils/GameObjectUtils.cs.meta" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/New Material.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/New Material.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Resources/CameraMaterial.mat" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Resources/CameraMaterial.mat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scenes/SampleScene.unity" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/UnityTogether/Processors/FileSync.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/UnityTogether/Processors/FileSync.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Assets/Scripts/UnityTogether/UnityTogetherClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/Scripts/UnityTogether/UnityTogetherClient.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ProjectSettings/RiderScriptEditorPersistedState.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/RiderScriptEditorPersistedState.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -193,7 +135,9 @@
       <workItem from="1689538786957" duration="8215000" />
       <workItem from="1692540276675" duration="651000" />
       <workItem from="1692630267298" duration="26000" />
-      <workItem from="1692630622171" duration="526000" />
+      <workItem from="1692630622171" duration="1199000" />
+      <workItem from="1695079061201" duration="2022000" />
+      <workItem from="1695081182173" duration="1084000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <created>1675826684288</created>
@@ -230,7 +174,21 @@
       <option name="project" value="LOCAL" />
       <updated>1692540327942</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Cleanup Files">
+      <created>1692631797889</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1692631797889</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Cleanup Add">
+      <created>1692631824088</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1692631824088</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -258,6 +216,8 @@
     <MESSAGE value="Fixed File Sync Error" />
     <MESSAGE value="Added new Packages" />
     <MESSAGE value="Preparation for Submission" />
-    <option name="LAST_COMMIT_MESSAGE" value="Preparation for Submission" />
+    <MESSAGE value="Cleanup Files" />
+    <MESSAGE value="Cleanup Add" />
+    <option name="LAST_COMMIT_MESSAGE" value="Cleanup Add" />
   </component>
 </project>

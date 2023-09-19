@@ -12,8 +12,12 @@ public sealed class FileDeletedPackage : FilePackage
     {
         PerformSafeFileOperation(() => 
         {
+            
             if (File.Exists(dataPath + path))
+            {
                 File.Delete(dataPath + path);
+                FileSync.RefreshAsset(dataPath + path);
+            }
         });
     }
 }

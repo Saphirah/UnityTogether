@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using ParrelSync;
 using UnityEditor;
 using UnityEngine;
 
 public class FileSync : Processor
 {
     private FileSystemWatcher watcher;
-    private string dataPath;
+    private static string dataPath;
     
     private static List<string> changedFiles = new List<string>();
     
@@ -30,19 +31,35 @@ public class FileSync : Processor
 
     protected void OnFileReceived(string username, string filePath, string fileContent)
     {
-        Debug.Log("File changed: " + GetRelativePath(filePath));
-        byte[] newFileBytes = Convert.FromBase64String(fileContent);
-        byte[] fileBytes = File.ReadAllBytes(filePath);
-        if (newFileBytes == fileBytes) return;
-        PerformSafeFileOperation(() => 
+        try
         {
-            changedFiles.Add(filePath);
-            File.WriteAllBytes(dataPath + filePath, newFileBytes);
-        });
+            Debug.Log("File changed: " + GetRelativePath(filePath));
+            byte[] newFileBytes = Convert.FromBase64String(fileContent);
+            try
+            {
+                byte[] fileBytes = File.ReadAllBytes(dataPath + filePath);
+                Debug.Log("Assets/" + filePath);
+                if (newFileBytes == fileBytes) return;
+            }
+            catch (Exception e) { }
+
+            PerformSafeFileOperation(() =>
+            {
+                changedFiles.Add(filePath);
+                File.WriteAllBytes(dataPath + filePath, newFileBytes);
+                if (!filePath.EndsWith(".cs") && !filePath.EndsWith(".unity"))
+                    RefreshAsset(filePath);
+            });
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
+        }
     }
 
     private void OnFileChanged(object sender, FileSystemEventArgs e)
     {
+        if (e.Name.Contains(".unity")) return;
         string relativePath = GetRelativePath(e.FullPath);
         if (changedFiles.Contains(relativePath))
         {
@@ -54,14 +71,27 @@ public class FileSync : Processor
             relativePath, 
             Convert.ToBase64String(File.ReadAllBytes(e.FullPath))
         );
-        AssetDatabase.ImportAsset(GetRelativePath(e.FullPath));
     }
     
     private void OnFileDeleted(object sender, FileSystemEventArgs e)
     {
         Debug.Log("File deleted: " + GetRelativePath(e.FullPath));
         communication.SendPackage(new FileDeletedPackage() { path = GetRelativePath(e.FullPath) });
-        AssetDatabase.ImportAsset(GetRelativePath(e.FullPath));
+    }
+
+    public static void RefreshAsset(string absolutePath)
+    {
+        EditorApplication.delayCall += () =>
+        {
+            try
+            {
+                AssetDatabase.ImportAsset("Assets" + GetRelativePath(absolutePath));
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+            }
+        };
     }
     
     private void OnFileRenamed(object sender, RenamedEventArgs e)
@@ -72,7 +102,6 @@ public class FileSync : Processor
             oldPath = GetRelativePath(e.OldFullPath),
             newPath = GetRelativePath(e.FullPath)
         });
-        AssetDatabase.MoveAsset(GetRelativePath(e.OldFullPath), GetRelativePath(e.FullPath));
     }
     
     public void PerformSafeFileOperation(Action action)
@@ -92,5 +121,5 @@ public class FileSync : Processor
         }
     }
     
-    private string GetRelativePath(string path) => path.Replace(dataPath, "");
+    private static string GetRelativePath(string path) => path.Replace(dataPath, "");
 }

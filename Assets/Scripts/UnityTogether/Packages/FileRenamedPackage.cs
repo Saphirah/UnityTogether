@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 
 public class FileRenamedPackage : FilePackage
@@ -15,7 +16,11 @@ public class FileRenamedPackage : FilePackage
         PerformSafeFileOperation(() => 
         {
             if (File.Exists(dataPath + oldPath))
+            {
                 File.Move(dataPath + oldPath, dataPath + newPath);
+                FileSync.RefreshAsset(dataPath + oldPath);
+                FileSync.RefreshAsset(dataPath + newPath);
+            }
         });
     }
 }
