@@ -1,7 +1,7 @@
 # UnityTogether
 
 **UnityTogether** is a hobby project, designed to enable real-time collaboration inside the Unity Editor. 
-By leveraging a custom C# networking server, UnityTogether allows multiple users to work together seamlessly within the same Unity scene, improving productivity and fostering teamwork for developers, artists, and designers.
+By leveraging a custom C# networking server, UnityTogether allows multiple users to work together seamlessly within the same Unity scene, allowing for teams to collaborate.
 
 ## Features
 
@@ -9,10 +9,10 @@ By leveraging a custom C# networking server, UnityTogether allows multiple users
   Multiple users can connect to the same Unity project and see each other's changes live.
 
 - **Custom Networking Server:**  
-  The project includes a robust C# server built with .NET 6.0, specifically tailored for Unity Editor collaboration.
+  The project includes a C# server built with .NET 6.0.
 
 - **Unity Integration:**  
-  Scripts, scenes, and assets are organized for easy integration and extension within any Unity project.
+  Scripts and example scenes are provided for testing out the library.
 
 ## Getting Started
 
