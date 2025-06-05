@@ -3,8 +3,6 @@
 **UnityTogether** is a hobby project, designed to enable real-time collaboration inside the Unity Editor. 
 By leveraging a custom C# networking server, UnityTogether allows multiple users to work together seamlessly within the same Unity scene, improving productivity and fostering teamwork for developers, artists, and designers.
 
----
-
 ## Features
 
 - **Real-Time Collaboration:**  
@@ -15,8 +13,6 @@ By leveraging a custom C# networking server, UnityTogether allows multiple users
 
 - **Unity Integration:**  
   Scripts, scenes, and assets are organized for easy integration and extension within any Unity project.
-
----
 
 ## Getting Started
 
@@ -56,14 +52,10 @@ git clone https://github.com/Saphirah/UnityTogether.git
 The plugin simply synchronizes the changes happening in the editor. It does not enforce that every user has the same scene, assets, or same VSC commit. 
 Please make sure, you start the session on a shared VSC commit.
 
----
-
 ## Contributing
 
 Contributions are welcome!
 This project is not in active development, but I will maintain and review pull requests.
-
----
 
 ## License
 
